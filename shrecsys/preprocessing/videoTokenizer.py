@@ -100,7 +100,7 @@ class VideoTokenizer(object):
         for video in self.__videos_topics_index.keys():
             self.__videos_index[video] = len(self.__videos_index) + 1
         self.__videos_count = len(self.__videos_index)
-        logging.critical("rebuild the video index by video_topics_index")
+        logging.critical("rebuild the video index by video_topics_index, video size:{}".format(len(self.__videos_index)))
 
     def __video_topic_to_sparse(self, index, vid):
         topic_seq = self.__videos_topics_index[vid][0]

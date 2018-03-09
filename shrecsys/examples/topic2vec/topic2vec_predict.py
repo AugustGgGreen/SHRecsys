@@ -8,43 +8,44 @@ import logging
 import os
 import time
 import numpy as np
-
 import tensorflow as tf
 from flask import Flask, jsonify
-
-from shrecsys.examples.word2vec.word2vec_example import ROOT, EMBED_SIZE, CONTEXT_SIZE, NUM_SAMPLED
+from shrecsys.examples.topic2vec.topic2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, MODEL_PATH, \
+    PREDICT_PATH
+from shrecsys.examples.word2vec.word2vec_example import TOP_K
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
-from shrecsys.preprocessing.video import VideoTokenizer
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-VIDEO_FEATURE = "../../../data/videotTFIDF.txt"
-logging.getLogger().setLevel(logging.INFO)
 fstool = FileSystemUtil()
-feature_index = fstool.load_obj(ROOT, "feature_index")
-video_index = fstool.load_obj(ROOT, "video_index")
-
-feature_size = len(feature_index)+1
-num_classes = len(video_index)+1
-model = Topic2vecModel(feature_size, num_classes, EMBED_SIZE, NUM_SAMPLED, CONTEXT_SIZE, top_k= 5)
-videoTokenizer = VideoTokenizer()
-predict_represents = videoTokenizer.load_represents(VIDEO_FEATURE, video_index)
-predict_index_represent = videoTokenizer.feature_to_index(predict_represents, feature_index)
+videoTokenzier = VideoTokenizer()
+videoTokenzier = fstool.load_obj(ROOT,"videoTokenzier")
+videoTokenzier.load_videos_topics(PREDICT_PATH, videos_topics)
+train_videos_size = videoTokenzier.get_videos_size()
+topics_size = videoTokenzier.get_topics_size()
+videoTokenzier.contain_videos_on_topics()
+videoTokenzier.clear("videos_topics")
+topic2vec = Topic2vecModel(topics_size + 1, train_videos_size + 1, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K)
+predict = videoTokenzier.get_videos_index()
+index_predict = dict(zip(predict.values(), predict.keys()))
+topic2vec.build_graph()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
-                                        gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.755555)))
+                                        gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25)))
 saver = tf.train.Saver()
-ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(ROOT, "checkpoints/checkpoint")))
+ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(MODEL_PATH, "checkpoints/checkpoint")))
 if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 
-logging.info("tf model init successfully!")
-predict_sparse, predict, index_predict = videoTokenizer.convert_predict_to_sparse(predict_index_represent)
+logging.critical("tf model init successfully!")
+predict_sparse = videoTokenzier.videos_topics_index_to_sparse()
 videos_topics = tf.SparseTensorValue(indices=predict_sparse[0], \
                                                 values=predict_sparse[1], dense_shape=(len(index_predict),50000))
 topics_weight = tf.SparseTensorValue(indices=predict_sparse[0], \
                                                 values=predict_sparse[2], dense_shape=(len(index_predict),50000))
-feed = {model.predict_videos_topics:videos_topics, \
-        model.predict_topics_weight:topics_weight}
-logging.info("create topic successful")
+feed = {topic2vec.predict_videos_topics:videos_topics, \
+        topic2vec.predict_topics_weight:topics_weight}
+videos_embedding = sess.run([topic2vec.videos_embedding], feed_dict=feed)
+logging.critical("create topic successful")
 app = Flask(__name__)
 
 @app.route('/dnn/<view_line>', methods=['GET'])
@@ -52,13 +53,11 @@ def dnn(view_line):
     start_time = time.time()
     view = view_line.split(" ")
     word_seq, rating = view[0], view[1]
-
     word_seq = [token for token in word_seq.strip().split(",")]
     rating = [float(token) for token in rating.strip().split(",")]
-
     assert len(word_seq) == len(rating)
-    logging.info("row_videos:{}".format(word_seq))
-    logging.info("row_rating:{}".format(rating))
+    logging.critical("row_videos:{}".format(word_seq))
+    logging.critical("row_rating:{}".format(rating))
     idx_seq = []
     use_rating = []
     for i, word in enumerate(word_seq):
@@ -66,37 +65,25 @@ def dnn(view_line):
             idx_seq.append(predict[word])
             use_rating.append(rating[i])
     rec_result = dict()
-
-    logging.info("videos:{}".format(idx_seq))
-    logging.info("rating:{}".format(use_rating))
-
+    logging.critical("videos:{}".format(idx_seq))
+    logging.critical("rating:{}".format(use_rating))
     if len(idx_seq) > 0:
         seq = np.expand_dims(idx_seq, axis=0)
         use_rating = np.expand_dims(use_rating, axis=0)
-        logging.info("user:{}".format(seq))
-        logging.info("rating{}:".format(use_rating))
-        top_idx, top_val = sess.run([model.top_idx, model.top_val], {model.seq: seq, model.rating: use_rating, model.videos_embedding: videos_embedding[0]})
+        logging.critical("user:{}".format(seq))
+        logging.critical("rating{}:".format(use_rating))
+        top_idx, top_val = sess.run([topic2vec.top_idx, topic2vec.top_val], {topic2vec.seq: seq, topic2vec.rating: use_rating, topic2vec.videos_embedding: videos_embedding[0]})
         top_idx = top_idx[0]
         top_val = top_val[0]
-        #print(top_idx)
-        #print(top_val)
-
-        #logging.info("input:{}, result:{}".format(word_seq, json.dumps(detail)))
-
         idx_seq = set(idx_seq)
         for i, idx in enumerate(top_idx):
             word = index_predict[idx]
             if idx not in idx_seq:
                 rec_result[word] = float(top_val[i])
-
     else:
-        logging.info("not contained!")
-
+        logging.critical("not contained!")
     end_time = time.time()
-    logging.info("cost time %fs" % (end_time - start_time))
-
+    logging.critical("cost time %fs" % (end_time - start_time))
     return jsonify(rec_result)
-
 if __name__ == '__main__':
-    #app.run(host='10.18.18.66', port=8080)
     app.run(host='127.0.0.1', port=8080)

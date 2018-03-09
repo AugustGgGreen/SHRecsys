@@ -2,10 +2,16 @@
 import codecs
 import logging
 class Corpus(object):
+
     def __init__(self):
         pass
 
     def load_idf(self, path):
+        '''
+        加载语料库中各个值的IDF值，并且构建word-index字典和word-IDF字典
+        :param path: IDF值存放的路径
+        :return:
+        '''
         self.__word_idf_dict = dict()
         self.__word_index_dict = dict()
         input = codecs.open(path, "rb", "utf-8")
@@ -23,6 +29,12 @@ class Corpus(object):
         logging.critical("load the idf of the corpus, the word size is: {}".format(len(self.__word_index_dict)))
 
     def calcu_videos_tfidf(self,path,videos_size):
+        '''
+        计算视频的tfidf值
+        :param path: 包含视频文本信息的文件路径
+        :param videos_size: 上述文件路径中视频个数
+        :return:
+        '''
         input_title = codecs.open(path, "rb", "utf-8")
         self.__videos_title = [line.strip() for line in input_title.readlines()]
         self.__videos_tfidf = dict()
@@ -76,4 +88,4 @@ class Corpus(object):
                     represents_str.append(str(word) + ":" + str(tfidf[1][index]))
                 tfidf = ",".join(represents_str)
                 output_tfidf.write(video + "\t" + tfidf + "\n")
-        logging.critical("save TFIDF success the store path:{}".format(path))
+        logging.critical("save TFIDF success! the store path:{}".format(path))

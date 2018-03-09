@@ -10,11 +10,11 @@ import time
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-from shrecsys.examples.topic2vec_examples import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, MODEL_PATH
+from shrecsys.examples.word2vec.word2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, MODEL_PATH, TOP_K, \
+    PREDICT_PATH
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-PREDICT_PATH = "../../data/videotTFIDF.txt"
 fstool = FileSystemUtil()
 videoTokenzier = VideoTokenizer()
 videoTokenzier = fstool.load_obj(ROOT,"videoTokenzier")
