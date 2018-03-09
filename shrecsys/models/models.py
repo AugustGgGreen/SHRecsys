@@ -19,4 +19,4 @@ class Model(object):
         model.load()
 
     def predict(self, input):
-        return []
+        return self.model.predict(input)
