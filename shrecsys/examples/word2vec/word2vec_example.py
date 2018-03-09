@@ -1,58 +1,57 @@
 # -*- coding:utf-8 -*-
-
-import codecs
-
+import sys
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
-from shrecsys.preprocessing.video import VideoTokenizer
-from shrecsys.preprocessing.view import ViewTokenizer
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
+from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-
-ROOT = "../../../data/word2vec"
-VIDEO_TITLE_PATH = "../../../data/video_title"
-IDF_PATH = "../../../data/CharacterIDF.txt"
-TFIDF_PATH = "../../../data/video_res"
-VIEW_PATH = "../../../data/view_seqs"
+ROOT = "../../../data/word2vec/"
+IDF_PATH = "../../../data/word2vec/CharacterIDF.txt"
+VIDEO_TITLE="../../../data/word2vec/video_title"
+VIEW_SEQS = "../../../data/view_seqs"
+TFIDF_PATH="../../../data/word2vec/videotTFIDF.txt"
+PREDICT_PATH = "../../../data/word2vec/videotTFIDF.txt"
+MODEL_PATH = "../../../data/word2vec"
 EMBED_SIZE = 30
 NUM_SAMPLED = 6
-CONTEXT_SIZE = 5
-EPOCH = 1
-LEARN_RATE = 1
+CONTEXT_SIZE = 2
+LEARN_RATING = 1
+ITER = 4
+EPOCH = 5
 BATCH_SIZE = 30
-def preprecessing():
-    videoTokenizer = VideoTokenizer()
+TOP_K = 10
+
+fstool = FileSystemUtil()
+def preprecessing(view_seqs,video_num):
     corpus = Corpus()
     corpus.load_idf(IDF_PATH)
-    input_title = codecs.open(VIDEO_TITLE_PATH, "rb", "utf-8")
-    words = [line.strip() for line in input_title.readlines()]
+    corpus.calcu_videos_tfidf(VIDEO_TITLE,video_num)
+    videos_tfidf = corpus.get_videos_tfidf()
+    videoTokenzier = VideoTokenizer(videos_tfidf)
+    videoTokenzier.load_videos_topics(TFIDF_PATH,videos_topics)
+    viewTokenizer = ViewTokenizer(view_seqs)
+    viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
+    videoTokenzier.videos_intersection(viewTokenizer.get_videos_index())
+    viewTokenizer.view_to_index_topics_seqs(videoTokenzier.get_videos_topics_index())
+    videoTokenzier.clear("videos_topics")
+    fstool.save_obj(videoTokenzier, ROOT, "videoTokenzier")
+    fstool.save_obj(corpus, ROOT, "corpus")
+    return viewTokenizer, videoTokenzier
 
-    #获取视频的分布式表示
-    represents_dict = videoTokenizer.calcu_videos_tfidf(videos_words=words, videos_num=1373738, corpus=corpus)
-    view_seqs = open(VIEW_PATH, "r").readlines()
-    viewTokenizer = ViewTokenizer()
-    #根据视频的分布式表示和过滤规则，生成输出数据和过滤后的视频序列
-    output, filter_views = viewTokenizer.views_to_sequence(view_seqs, represents_dict)
-
-    #根据过滤后的视频索引，建立覆盖到的特征索引，并对覆盖到的视频特征索引化
-    feature_index, represents_index = videoTokenizer.represents_to_index(viewTokenizer.video_index)
-
-    #对过滤后的观影序列用索引化后的视频特征表示替代，生成输入数据
-    input = viewTokenizer.feature_to_sequence_index(filter_views, represents_index)
-    fstool = FileSystemUtil()
-    fstool.save_obj(feature_index, ROOT, "feature_index")
-    fstool.save_obj(videoTokenizer.video_index, ROOT, "video_index")
-    return input, output, viewTokenizer.video_index, feature_index
-
-def train(input, output, video_index, feature_index):
-    feature_size = len(feature_index) + 1
-    num_class = len(video_index) + 1
-    topic2vec = Topic2vec(feature_size, num_class, EMBED_SIZE, NUM_SAMPLED, CONTEXT_SIZE)
-    save_config = {"model_path": "../../../data/word2vec/checkpoints", "save_iter": 1}
+if __name__=="__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python topic2vec_example.py <videos_num>")
+        print("videos_num: the number of the videos title!")
+        exit(-1)
+    videos_num = int(sys.argv[1])
+    input_view = open(VIEW_SEQS)
+    view_seqs = [line.strip().split() for line in input_view.readlines()]
+    viewTokenzier, videoTokenzier = preprecessing(view_seqs, videos_num)
+    topics_size = videoTokenzier.get_topics_size()
+    videos_size = videoTokenzier.get_videos_size()
+    topic2vec = Topic2vec(topics_size + 1, videos_size + 1, EMBED_SIZE, NUM_SAMPLED, CONTEXT_SIZE)
+    save_config = {"model_path": MODEL_PATH, "save_iter": ITER}
     topic2vec.config(save_config)
-    model = Model(topic2vec, epoch=2, lr=1, batch_size=30)
-    model.fit(input, output)
-
-if __name__ == "__main__":
-    input, output, video_index, feature_index = preprecessing()
-    train(input, output, video_index, feature_index)
+    model = Model(topic2vec, EPOCH, LEARN_RATING, BATCH_SIZE)
+    model.fit(viewTokenzier.get_view_topics_index(), viewTokenzier.get_view_index())
