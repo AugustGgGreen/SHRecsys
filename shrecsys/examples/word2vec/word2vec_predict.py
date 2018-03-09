@@ -3,14 +3,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
+import sys
+sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 import logging
 import os
 import time
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-from shrecsys.examples.word2vec.word2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, MODEL_PATH, TOP_K, \
+from shrecsys.examples.word2vec.word2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, ROOT, TOP_K, \
     PREDICT_PATH
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
@@ -31,7 +32,7 @@ sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
                                         gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25)))
 saver = tf.train.Saver()
-ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(MODEL_PATH, "checkpoints/checkpoint")))
+ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(ROOT, "checkpoints/checkpoint")))
 if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 
