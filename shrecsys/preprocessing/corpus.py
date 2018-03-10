@@ -18,7 +18,11 @@ class Corpus(object):
         dataStr = input.read()
         str = ""
         bechar = " "
+        index = 0
         for char in dataStr:
+            if index % 100000 == 0:
+                logging.critical('load the data from path:"{}", the index: {}'.format(path, index))
+            index += 1
             if char == '\n' and bechar != '\n':
                 word, idf = str.split('\t')
                 self.__word_idf_dict[word] = float(idf)
@@ -40,6 +44,8 @@ class Corpus(object):
         self.__videos_tfidf = dict()
         index = 0
         for video_title in self.__videos_title:
+            if index % 100000 == 0:
+                logging.critical("calculate the video TF-IDF of the videos title, the index : {}".format(index))
             video_words_split = video_title.strip().split('\t')
             vid = video_words_split[0]
             site = video_words_split[1]
@@ -53,7 +59,7 @@ class Corpus(object):
             index += 1
 
         if videos_size != index:
-            raise ValueError("give the video number is not equal the number of the title")
+            raise ValueError("give the video number {} is not equal the number of the videos title {}".format(videos_size, index))
         logging.critical("calculate the tfidf of the videos success, video size: {}".format(len(self.__videos_tfidf)))
 
     def __calculate_video_tfidf(self, words):
@@ -80,7 +86,11 @@ class Corpus(object):
 
     def save_tfidf(self, path):
         output_tfidf = codecs.open(path, "w")
+        index = 0
         for video in self.__videos_tfidf.keys():
+            if index % 100000 == 0:
+                logging.critical('save the TF-IDF in path {}, the index: {}'.format(path, index))
+            index += 1
             tfidf = self.__videos_tfidf.get(video)
             if len(tfidf[0]) > 0:
                 represents_str = []

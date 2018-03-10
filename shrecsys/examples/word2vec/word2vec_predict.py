@@ -4,6 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import sys
+
+from shrecsys.preprocessing.corpus import Corpus
+
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 import logging
 import os
@@ -14,12 +17,21 @@ from flask import Flask, jsonify
 from shrecsys.examples.word2vec.word2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, ROOT, TOP_K, \
     PREDICT_PATH
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
+if len(sys.argv) != 2:
+    print("Usage: python word2vec_predict.py <videos_num>")
+    print("videos num: videos number in predict")
+    exit(-1)
+videos_num = int(sys.argv[1])
 fstool = FileSystemUtil()
 videoTokenzier = VideoTokenizer()
+corpus = Corpus()
 videoTokenzier = fstool.load_obj(ROOT,"videoTokenzier")
-videoTokenzier.load_videos_topics(PREDICT_PATH, videos_topics)
+corpus = fstool.load_obj(ROOT, "corpus")
+corpus.calcu_videos_tfidf(PREDICT_PATH, videos_num)
+videos_tfidf = corpus.get_videos_tfidf()
+videoTokenzier.set_videos_topics(videos_tfidf)
 train_videos_size = videoTokenzier.get_videos_size()
 topics_size = videoTokenzier.get_topics_size()
 videoTokenzier.contain_videos_on_topics()

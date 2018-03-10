@@ -37,6 +37,7 @@ class VideoTokenizer(object):
         self.__videos_index = dict()
         for video in self.__videos_topics.keys():
             self.__videos_index[video] = len(self.__videos_index) + 1
+        logging.critical('build video index success, video size: {}'.format(len(self.__videos_index)))
 
     def __build_topics_index(self):
         '''
@@ -57,6 +58,7 @@ class VideoTokenizer(object):
                             continue
                         else:
                             self.__topics_index[topic] = len(self.__topics_index) + 1
+            logging.critical('build topics index success, topics size:{}'.format(len(self.__topics_index)))
 
     def __build_videos_topics_index(self):
         '''
@@ -71,6 +73,7 @@ class VideoTokenizer(object):
             topics = self.__videos_topics.get(video)
             index_topics = self.__build_video_topics_index(topics)
             self.__videos_topics_index[video] = index_topics
+        logging.critical('build video topic index success, videos size:{}'.format(len(self.__videos_topics_index)))
 
     def __build_video_topics_index(self,topics):
         '''
@@ -145,7 +148,11 @@ class VideoTokenizer(object):
         if not isinstance(self.__videos_topics_index, dict):
             self.__videos_topics_index = dict()
         self.__videos_topics_index.clear()
+        index = 0
         for video in self.__videos_topics.keys():
+            if index % 100000 == 0:
+                logging.critical('build the video topic index by topics index, and the index:{}'.format(index))
+            index += 1
             topics = self.__videos_topics.get(video)
             index_topics = []
             if topics is None:
@@ -170,6 +177,8 @@ class VideoTokenizer(object):
         predict_weight = []
         index = 0
         for vid in self.__videos_topics_index:
+            if index % 100000 == 0:
+                logging.critical('convert videos topics index to spare, the index: {}'.format(index))
             sparse_topics = self.__video_topic_to_sparse(index,vid)
             for topic_idx in sparse_topics[0]:
                 predict_topics_idx.append(topic_idx)
@@ -205,11 +214,18 @@ class VideoTokenizer(object):
         if "videos_topics" in argv and isinstance(self.__videos_topics, dict):
             self.__videos_topics.clear()
 
+    def set_videos_topics(self, videos_topics):
+        self.__videos_topics = videos_topics
+        self.__build_tokenizer()
 
-def videos_topics(path):
+
+def load_videos_topics(path):
     video_topic = dict()
     with open(path) as f:
+        index = 0
         for line in itertools.islice(f, 0, None):
+            logging.critical('the load the videos topics form path:{} the index:{}'.format(path, index))
+            index += 1
             vidRow, topics = line.split('\t')
             vid, siteid = vidRow.split(',')
             vidRes = vid + siteid

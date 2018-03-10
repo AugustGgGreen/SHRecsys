@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-
+import logging
 class ViewTokenizer(object):
     def __init__(self, view_seqs, video_index=None, min_cnt=0):
         self.__view_seqs = view_seqs
@@ -25,13 +25,21 @@ class ViewTokenizer(object):
         if self.__view_seqs is None:
             raise ValueError("the view seqs is None, please set the view seqs!")
         else:
+            index = 0
             for video in self.__video_count.keys():
+                if index % 100000 == 0:
+                    logging.critical('build videos index in view, videos index:{}'.format(index))
+                index += 1
                 if self.__video_count.get(video) > self.__min_cnt:
                     self.__videos_index[video] = len(self.__videos_index) + 1
 
     def __count_video(self):
         self.__video_count = dict()
+        index = 0
         for view_seq in self.__view_seqs:
+            if index % 100000 == 0:
+                logging.critical('count user view seqs, the user index:{}'.format(index))
+            index +=1
             for video in view_seq:
                 if video in self.__video_count.keys():
                     self.__video_count[video] += 1
@@ -41,7 +49,11 @@ class ViewTokenizer(object):
     def __view_to_index_seqs(self):
         self.__view_seqs_index = []
         self.__view_seqs_filter = []
+        index = 0
         for view_seq in self.__view_seqs:
+            if index % 100000 == 0:
+                logging.critical('convert video id to video index in view seqs, user index: {}'.format(index))
+            index += 1
             view_seq_index = []
             view_seq_filter = []
             for video in view_seq:
@@ -62,10 +74,15 @@ class ViewTokenizer(object):
                     videos_index_new[video] = len(videos_index_new) + 1
             self.__videos_index = videos_index_new
             self.__view_to_index_seqs()
+            logging.critical("build the intersection videos index in view videos, videos size: {}".format(len(videos_index_new)))
 
     def view_to_index_topics_seqs(self, videos_topics):
         self.__view_seqs_topics = []
+        index = 0
         for view_seq in self.__view_seqs_filter:
+            if index % 100000 == 0:
+                logging.critical("convert videos in view to videos topics distribute, seqs index: {}".format(index))
+            index += 1
             view_seq_topics = []
             for video in view_seq:
                 topics = videos_topics.get(video)

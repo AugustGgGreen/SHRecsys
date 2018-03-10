@@ -4,25 +4,36 @@ sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-ROOT = "/data/app/xuezhengyin/app/shrecsys/data/word2vec/data"
+#ROOT = "/data/app/xuezhengyin/app/shrecsys/data/word2vec"
+ROOT = "../../../data/word2vec"
 IDF_PATH = ROOT + "/videos_IDF.txt"
 VIDEO_TITLE = ROOT + "/videos_title"
 VIEW_SEQS = ROOT + "/view_seqs"
-#TFIDF_PATH="../../../data/word2vec/videotTFIDF.txt"
-PREDICT_PATH = ROOT + "/predcit_videos_title"
-EMBED_SIZE = 300
-NUM_SAMPLED = 64
-CONTEXT_SIZE = 5
-LEARN_RATING = 1
-ITER = 4
-EPOCH = 20
-BATCH_SIZE = 300
-TOP_K = 100
-MIN_CNT = 3
+PREDICT_PATH = ROOT + "/predict_videos_title"
+#EMBED_SIZE = 300
+#NUM_SAMPLED = 64
+#CONTEXT_SIZE = 5
+#LEARN_RATING = 1
+#ITER = 4
+#EPOCH = 20
+#BATCH_SIZE = 300
+#TOP_K = 100
+#MIN_CNT = 3
 
+
+
+EMBED_SIZE = 30
+NUM_SAMPLED = 4
+CONTEXT_SIZE = 2
+LEARN_RATING = 1
+ITER = 1
+EPOCH = 2
+BATCH_SIZE = 10
+TOP_K = 10
+MIN_CNT = 0
 fstool = FileSystemUtil()
 def preprecessing(view_seqs,video_num):
     corpus = Corpus()
