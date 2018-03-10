@@ -213,6 +213,10 @@ class VideoTokenizer(object):
         argv = kargs.split(' ')
         if "videos_topics" in argv and isinstance(self.__videos_topics, dict):
             self.__videos_topics.clear()
+        if "videos_index" in argv and isinstance(self.__videos_index, dict):
+            self.__videos_index.clear()
+        if "videos_topics_index" in argv and isinstance(self.__videos_topics_index, dict):
+            self.__videos_topics_index.clear()
 
     def set_videos_topics(self, videos_topics):
         self.__videos_topics = videos_topics
@@ -243,5 +247,5 @@ def load_videos_topics(path):
 
 if __name__=="__main__":
     videoTokenzier = VideoTokenizer()
-    videoTokenzier.load_videos_topics("../../data/videotTFIDF.txt", videos_topics)
+    videoTokenzier.load_videos_topics("../../data/videotTFIDF.txt", load_videos_topics)
     print(videoTokenzier.get_topics_index())

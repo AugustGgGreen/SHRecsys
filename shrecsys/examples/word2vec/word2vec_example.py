@@ -7,7 +7,7 @@ from shrecsys.preprocessing.corpus import Corpus
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-#ROOT = "/data/app/xuezhengyin/app/shrecsys/data/word2vec"
+#ROOT = "/data/app/xuezhengyin/app/shrecsys/data/word2vec/data"
 ROOT = "../../../data/word2vec"
 IDF_PATH = ROOT + "/videos_IDF.txt"
 VIDEO_TITLE = ROOT + "/videos_title"
@@ -46,8 +46,7 @@ def preprecessing(view_seqs,video_num):
     viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
     videoTokenzier.videos_intersection(viewTokenizer.get_videos_index())
     viewTokenizer.view_to_index_topics_seqs(videoTokenzier.get_videos_topics_index())
-    videoTokenzier.clear("videos_topics")
-    fstool.save_obj(videoTokenzier, ROOT, "videoTokenzier")
+    corpus.clear("videos_title videos_tfidf")
     fstool.save_obj(corpus, ROOT, "corpus")
     return viewTokenizer, videoTokenzier
 
@@ -67,3 +66,5 @@ if __name__=="__main__":
     topic2vec.config(save_config)
     model = Model(topic2vec, EPOCH, LEARN_RATING, BATCH_SIZE)
     model.fit(viewTokenzier.get_view_topics_index(), viewTokenzier.get_view_index())
+    videoTokenzier.clear("videos_topics videos_index videos_topics_index")
+    fstool.save_obj(videoTokenzier, ROOT, "videoTokenzier")

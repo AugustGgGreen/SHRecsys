@@ -27,7 +27,11 @@ def generate_batches(input, output, batch_size, context_size):
     video_topic_sparse_value = []
     topic_weight = []
     i = 0
+    index = 0
     for seq in range(len(input)):
+        if index % 100000 == 0:
+            logging.critical("generate batches of the model's input and output, index:{}".format(index))
+        index += 1
         for video in range(len(input[seq])):
             context = random.randint(1, context_size)
             center = input[seq][video]

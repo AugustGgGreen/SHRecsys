@@ -99,3 +99,10 @@ class Corpus(object):
                 tfidf = ",".join(represents_str)
                 output_tfidf.write(video + "\t" + tfidf + "\n")
         logging.critical("save TFIDF success! the store path:{}".format(path))
+
+    def clear(self, string):
+        clear_string = string.split(' ')
+        if "videos_title" in clear_string:
+            self.__videos_title.clear()
+        if "videos_tfidf" in clear_string:
+            self.__videos_tfidf.clear()

@@ -57,9 +57,9 @@ class ViewTokenizer(object):
             view_seq_index = []
             view_seq_filter = []
             for video in view_seq:
-                index = self.__videos_index.get(video)
-                if index is not None:
-                    view_seq_index.append(index)
+                video_index = self.__videos_index.get(video)
+                if video_index is not None:
+                    view_seq_index.append(video_index)
                     view_seq_filter.append(video)
             self.__view_seqs_index.append(view_seq_index)
             self.__view_seqs_filter.append(view_seq_filter)
