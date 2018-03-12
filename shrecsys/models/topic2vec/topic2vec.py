@@ -4,12 +4,13 @@ import random
 import logging
 import datetime
 import tensorflow as tf
+
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 fstool = FileSystemUtil()
-
+BATCHES_LEN = 10000
 def video_topic_to_sparse(index, topic_seq):
     indices = []
     values = []
@@ -18,7 +19,7 @@ def video_topic_to_sparse(index, topic_seq):
         values.append(topic_seq[i])
     return [indices, values]
 
-def generate_batches(input, output, batch_size, context_size):
+def generate_batches(input, output, batch_size, context_size, store_path):
     center_batches = []
     target_batches = []
     context_size = context_size
@@ -28,6 +29,7 @@ def generate_batches(input, output, batch_size, context_size):
     topic_weight = []
     i = 0
     index = 0
+    count = 0
     for seq in range(len(input)):
         if index % 100000 == 0:
             logging.critical("generate batches of the model's input and output, index:{}".format(index))
@@ -52,6 +54,12 @@ def generate_batches(input, output, batch_size, context_size):
                     center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
                     target_batches.append(target_batch)
                     i = 0
+                    if len(center_batches) == BATCHES_LEN:
+                        fstool.save_obj(center_batches, store_path, "center_batches-" + str(count))
+                        fstool.save_obj(target_batches, store_path, "target_batches-" + str(count))
+                        center_batches.clear()
+                        target_batches.clear()
+                        count += 1
                     video_topic_sparse_idx = []
                     video_topic_sparse_value = []
                     topic_weight = []
@@ -80,9 +88,17 @@ def generate_batches(input, output, batch_size, context_size):
 
     if len(video_topic_sparse_idx) > 0:
         center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
-        target_batch = target_batch[0:i, ]
+        target_batch = target_batch[0:i,]
         target_batches.append(target_batch)
-    return center_batches, target_batches
+    fstool.save_obj(center_batches, store_path, "center_batches-" + str(count))
+    print(center_batches)
+    fstool.save_obj(target_batches, store_path, "target_batches-" + str(count))
+    print(target_batches)
+    last_batches = len(center_batches)
+    center_batches.clear()
+    target_batches.clear()
+    count += 1
+    return count, last_batches
 
 
 
@@ -129,42 +145,43 @@ class Topic2vec(object):
         model_path = self.model_path
         save_iter = self.save_iter
         model = self.model
-        input_batches, output_batches = generate_batches(input, output, batch_size, context_size)
+        count, last_batches_len = generate_batches(input, output, batch_size, context_size, model_path)
         train_start = datetime.datetime.now()
         saver = tf.train.Saver()
-        print(model_path)
         fstool.make_dir(model_path)
-        print(save_iter)
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True,
                 log_device_placement=True,
                 gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25))) as sess:
             sess.run(tf.global_variables_initializer())
-            all = len(output_batches)
+            all = (count - 1) * BATCHES_LEN + last_batches_len
             total_loss = 0.0
             for i in range(epoch):
                 logging.critical("current EPOCH is %d" % i)
                 batch_cnt = 0
                 k = 0
-                for input_batch, output_batch in zip(input_batches, output_batches):
+                for batches_index in range(count):
+                    input_batches = fstool.load_obj(model_path, "center_batches-" + str(batches_index))
+                    output_batches = fstool.load_obj(model_path, "target_batches-" + str(batches_index))
+                    for input_batch, output_batch in zip(input_batches, output_batches):
 
-                    videos_topics = tf.SparseTensorValue(indices=input_batch[0], \
-                                                         values=input_batch[1],
-                                                         dense_shape=(len(output_batch), 5000000))
-                    topics_weight = tf.SparseTensorValue(indices=input_batch[0], \
-                                                         values=input_batch[2],
-                                                         dense_shape=(len(output_batch), 5000000))
-                    feed_dict = {model.videos_topics: videos_topics, \
-                                 model.topics_weight: topics_weight, \
-                                 model.target_videos: output_batch}
-                    loss_batch, _ = sess.run([model.loss, model.nce_weight], feed_dict=feed_dict)
-                    total_loss += loss_batch
-                    batch_cnt += output_batch.shape[0]
+                        videos_topics = tf.SparseTensorValue(indices=input_batch[0], \
+                                                             values=input_batch[1],
+                                                             dense_shape=(len(output_batch), 5000000))
+                        topics_weight = tf.SparseTensorValue(indices=input_batch[0], \
+                                                             values=input_batch[2],
+                                                             dense_shape=(len(output_batch), 5000000))
+                        feed_dict = {model.videos_topics: videos_topics, \
+                                     model.topics_weight: topics_weight, \
+                                     model.target_videos: output_batch}
+                        loss_batch, _ = sess.run([model.loss, model.nce_weight], feed_dict=feed_dict)
+                        total_loss += loss_batch
+                        batch_cnt += output_batch.shape[0]
 
-                    k += 1
-                    if k % 60 == 0:
-                        logging.critical('Average loss {:5.8f}, epoch {}, {}/{}, batch cnt {}, ' \
-                                     .format(total_loss / batch_cnt, i, k, all, batch_cnt))
+                        k += 1
+                        if k % 60 == 0:
+                            logging.critical('Average loss {:5.8f}, epoch {}, {}/{}, batch cnt {}, ' \
+                                         .format(total_loss / batch_cnt, i, k, all, batch_cnt))
                 logging.critical('Average loss at epoch {} batch cnt {}, cur loss: {:5.5f}, '. \
                              format(i, batch_cnt, total_loss / batch_cnt))
                 total_loss = 0.0
