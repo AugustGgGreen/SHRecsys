@@ -10,14 +10,8 @@ from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 fstool = FileSystemUtil()
-BATCHES_LEN = 10000
-def video_topic_to_sparse(index, topic_seq):
-    indices = []
-    values = []
-    for i in range(len(topic_seq)):
-        indices.append([index, i])
-        values.append(topic_seq[i])
-    return [indices, values]
+BATCHES_LEN = 20000
+TOPIC_SIZE = 10000
 
 def generate_batches(input, output, batch_size, context_size, store_path):
     center_batches = []
@@ -38,19 +32,7 @@ def generate_batches(input, output, batch_size, context_size, store_path):
             context = random.randint(1, context_size)
             center = input[seq][video]
             for target in output[seq][max(0, video - context):video]:
-                if i < batch_size:
-                    sparse_topic = video_topic_to_sparse(i, center[0])
-                    for topic_idx in sparse_topic[0]:
-                        video_topic_sparse_idx.append(topic_idx)
-                    for topic_value in sparse_topic[1]:
-                        video_topic_sparse_value.append(topic_value)
-
-                    for weight in center[1]:
-                        topic_weight.append(weight)
-                    target_batch[i] = target
-                    i += 1
-
-                else:
+                if i >= batch_size:
                     center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
                     target_batches.append(target_batch)
                     i = 0
@@ -64,20 +46,15 @@ def generate_batches(input, output, batch_size, context_size, store_path):
                     video_topic_sparse_value = []
                     topic_weight = []
                     target_batch = np.zeros([batch_size, 1])
+                topic_idx = [[i, x] for x in range(len(center[0]))]
+                video_topic_sparse_idx.extend(topic_idx)
+                video_topic_sparse_value.extend(center[0])
+                topic_weight.extend(center[1])
+                target_batch[i] = target
+                i += 1
 
             for target in output[seq][video + 1:video + context + 1]:
-                if i < batch_size:
-                    sparse_topic = video_topic_to_sparse(i, center[0])
-                    for topic_idx in sparse_topic[0]:
-                        video_topic_sparse_idx.append(topic_idx)
-                    for topic_value in sparse_topic[1]:
-                        video_topic_sparse_value.append(topic_value)
-
-                    for weight in center[1]:
-                        topic_weight.append(weight)
-                    target_batch[i] = target
-                    i += 1
-                else:
+                if i >= batch_size:
                     center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
                     target_batches.append(target_batch)
                     i = 0
@@ -91,15 +68,19 @@ def generate_batches(input, output, batch_size, context_size, store_path):
                     video_topic_sparse_value = []
                     topic_weight = []
                     target_batch = np.zeros([batch_size, 1])
+                topic_idx = [[i, x] for x in range (len(center[0]))]
+                video_topic_sparse_idx.extend(topic_idx)
+                video_topic_sparse_value.extend(center[0])
+                topic_weight.extend(center[1])
+                target_batch[i] = target
+                i += 1
 
     if len(video_topic_sparse_idx) > 0:
         center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
         target_batch = target_batch[0:i,]
         target_batches.append(target_batch)
     fstool.save_obj(center_batches, store_path, "center_batches-" + str(count))
-    print(center_batches)
     fstool.save_obj(target_batches, store_path, "target_batches-" + str(count))
-    print(target_batches)
     last_batches = len(center_batches)
     center_batches.clear()
     target_batches.clear()
@@ -173,10 +154,10 @@ class Topic2vec(object):
 
                         videos_topics = tf.SparseTensorValue(indices=input_batch[0], \
                                                              values=input_batch[1],
-                                                             dense_shape=(len(output_batch), 5000000))
+                                                             dense_shape=(len(output_batch), TOPIC_SIZE))
                         topics_weight = tf.SparseTensorValue(indices=input_batch[0], \
                                                              values=input_batch[2],
-                                                             dense_shape=(len(output_batch), 5000000))
+                                                             dense_shape=(len(output_batch), TOPIC_SIZE))
                         feed_dict = {model.videos_topics: videos_topics, \
                                      model.topics_weight: topics_weight, \
                                      model.target_videos: output_batch}
