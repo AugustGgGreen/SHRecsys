@@ -45,7 +45,6 @@ def preprecessing(view_seqs,video_num):
     #videoTokenzier.load_videos_topics(TFIDF_PATH,videos_topics)
     viewTokenizer = ViewTokenizer(view_seqs,min_cnt=MIN_CNT)
     viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
-    videoTokenzier.videos_intersection(viewTokenizer.get_videos_index())
     viewTokenizer.view_to_index_topics_seqs(videoTokenzier.get_videos_topics_index())
     corpus.clear("videos_title videos_tfidf")
     fstool.save_obj(corpus, TRAIN_ROOT, "corpus")

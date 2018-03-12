@@ -54,7 +54,7 @@ def generate_batches(input, output, batch_size, context_size, store_path):
                     center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
                     target_batches.append(target_batch)
                     i = 0
-                    if len(center_batches) == BATCHES_LEN:
+                    if len(center_batches) % BATCHES_LEN == 0:
                         fstool.save_obj(center_batches, store_path, "center_batches-" + str(count))
                         fstool.save_obj(target_batches, store_path, "target_batches-" + str(count))
                         center_batches.clear()
@@ -81,6 +81,12 @@ def generate_batches(input, output, batch_size, context_size, store_path):
                     center_batches.append([video_topic_sparse_idx, video_topic_sparse_value, topic_weight])
                     target_batches.append(target_batch)
                     i = 0
+                    if len(center_batches) % BATCHES_LEN == 0:
+                        fstool.save_obj(center_batches, store_path, "center_batches-" + str(count))
+                        fstool.save_obj(target_batches, store_path, "target_batches-" + str(count))
+                        center_batches.clear()
+                        target_batches.clear()
+                        count += 1
                     video_topic_sparse_idx = []
                     video_topic_sparse_value = []
                     topic_weight = []
