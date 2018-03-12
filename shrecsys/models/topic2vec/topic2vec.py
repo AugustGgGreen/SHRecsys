@@ -11,8 +11,6 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 fstool = FileSystemUtil()
 BATCHES_LEN = 20000
-TOPIC_SIZE = 10000
-
 def generate_batches(input, output, batch_size, context_size, store_path):
     center_batches = []
     target_batches = []
@@ -132,6 +130,7 @@ class Topic2vec(object):
         model_path = self.model_path
         save_iter = self.save_iter
         model = self.model
+        topics_size = self.topics_size
         count, last_batches_len = generate_batches(input, output, batch_size, context_size, model_path)
         train_start = datetime.datetime.now()
         saver = tf.train.Saver()
@@ -154,10 +153,10 @@ class Topic2vec(object):
 
                         videos_topics = tf.SparseTensorValue(indices=input_batch[0], \
                                                              values=input_batch[1],
-                                                             dense_shape=(len(output_batch), TOPIC_SIZE))
+                                                             dense_shape=(len(output_batch), topics_size))
                         topics_weight = tf.SparseTensorValue(indices=input_batch[0], \
                                                              values=input_batch[2],
-                                                             dense_shape=(len(output_batch), TOPIC_SIZE))
+                                                             dense_shape=(len(output_batch), topics_size))
                         feed_dict = {model.videos_topics: videos_topics, \
                                      model.topics_weight: topics_weight, \
                                      model.target_videos: output_batch}
