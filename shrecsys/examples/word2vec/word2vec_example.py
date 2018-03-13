@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 import sys
-#sys.path.append("/data/app/xuezhengyin/app/shrecsys")
+sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
@@ -41,14 +41,14 @@ def preprecessing(view_seqs,video_num):
     corpus.load_idf(TRAIN_ROOT + IDF_PATH)
     corpus.calcu_videos_tfidf(TRAIN_ROOT + VIDEO_TITLE,video_num)
     videos_tfidf = corpus.get_videos_tfidf()
-    videoTokenzier = VideoTokenizer(videos_tfidf)
-    #videoTokenzier.load_videos_topics(TFIDF_PATH,videos_topics)
+    videoTokenizer = VideoTokenizer(videos_tfidf)
     viewTokenizer = ViewTokenizer(view_seqs,min_cnt=MIN_CNT)
-    viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
-    viewTokenizer.view_to_index_topics_seqs(videoTokenzier.get_videos_topics_index())
+    viewTokenizer.videos_intersection(videoTokenizer.get_videos_index())
+    videoTokenizer.videos_intersection(viewTokenizer.get_videos_index())
+    viewTokenizer.view_to_index_topics_seqs(videoTokenizer.get_videos_topics_index())
     corpus.clear("videos_title videos_tfidf")
     fstool.save_obj(corpus, TRAIN_ROOT, "corpus")
-    return viewTokenizer, videoTokenzier
+    return viewTokenizer, videoTokenizer
 
 if __name__=="__main__":
     if len(sys.argv) != 2:
@@ -67,7 +67,6 @@ if __name__=="__main__":
     model = Model(topic2vec, EPOCH, LEARN_RATING, BATCH_SIZE)
     input = viewTokenzier.get_view_topics_index()
     output = viewTokenzier.get_view_index()
-    videoTokenzier.clear("videos_topics videos_topics_index videos_index")
     fstool.save_obj(videoTokenzier, TRAIN_ROOT, "videoTokenzier")
     del viewTokenzier
     del videoTokenzier

@@ -1,6 +1,10 @@
 # -*-coding:utf-8 -*-
 import codecs
 import logging
+
+import sys
+
+
 class Corpus(object):
 
     def __init__(self):
@@ -50,10 +54,10 @@ class Corpus(object):
             vid = video_words_split[0]
             site = video_words_split[1]
             words = "".join(video_words_split[2:])
-            represents = self.__calculate_video_tfidf(words)
-            if len(represents[0]) > 0:
+            tfidf = self.__calculate_video_tfidf(words)
+            if len(tfidf[0]) > 0:
                 if self.__videos_tfidf.get(vid+site) is None:
-                    self.__videos_tfidf[vid+site] = represents
+                    self.__videos_tfidf[vid+site] = tfidf
                 if self.__videos_tfidf.get(vid+site) is None:
                     self.__videos_tfidf[vid+site] = len(self.__videos_tfidf) + 1
             index += 1
@@ -76,7 +80,7 @@ class Corpus(object):
             index = self.__word_index_dict.get(word)
             if idf is None or index is None:
                 continue
-            tfidf = local_word_dict.get(word) / idf
+            tfidf = local_word_dict.get(word) * idf / len(words)
             word_res.append(index)
             weight_res.append(tfidf)
         return [word_res, weight_res]
@@ -86,18 +90,20 @@ class Corpus(object):
 
     def save_tfidf(self, path):
         output_tfidf = codecs.open(path, "w")
-        index = 0
+        i = 0
         for video in self.__videos_tfidf.keys():
-            if index % 100000 == 0:
-                logging.critical('save the TF-IDF in path {}, the index: {}'.format(path, index))
-            index += 1
+            if i % 100000 == 0:
+                logging.critical('save the TF-IDF in path {}, the index: {}'.format(path, i))
+            i += 1
             tfidf = self.__videos_tfidf.get(video)
             if len(tfidf[0]) > 0:
                 represents_str = []
                 for index, word in enumerate(tfidf[0]):
                     represents_str.append(str(word) + ":" + str(tfidf[1][index]))
                 tfidf = ",".join(represents_str)
-                output_tfidf.write(video + "\t" + tfidf + "\n")
+                vid = video[0:len(video)-1]
+                site = video[len(video)-1]
+                output_tfidf.write(vid + ',' + site + "\t" + tfidf + "\n")
         logging.critical("save TFIDF success! the store path:{}".format(path))
 
     def clear(self, string):
@@ -106,3 +112,14 @@ class Corpus(object):
             self.__videos_title.clear()
         if "videos_tfidf" in clear_string:
             self.__videos_tfidf.clear()
+
+TRAIN_ROOT = '../../data/word2vec'
+IDF_PATH = '/videos_idf.txt'
+VIDEO_TITLE = '/videos_title'
+VIDOE_TF_IDF = "/videos_tfidf.txt"
+if __name__=="__main__":
+    video_num = int(sys.argv[1])
+    corpus = Corpus()
+    corpus.load_idf(TRAIN_ROOT + IDF_PATH)
+    corpus.calcu_videos_tfidf(TRAIN_ROOT + VIDEO_TITLE, video_num)
+    videos_tfidf = corpus.save_tfidf(TRAIN_ROOT + VIDOE_TF_IDF)
