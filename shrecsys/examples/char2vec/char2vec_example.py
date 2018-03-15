@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 import sys
-
-from shrecsys.util.redisDao import RedisDao
-
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
@@ -10,12 +7,12 @@ from shrecsys.preprocessing.corpus import Corpus
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-TRAIN_ROOT = "../../../data"
+TRAIN_ROOT = "./data"
 PREDICT_ROOT = "./data_online"
 #ROOT = "../../../data/word2vec"
 IDF_PATH = "/videos_IDF.txt"
 VIDEO_TITLE = "/videos_title"
-VIEW_SEQS = "/view_test"
+VIEW_SEQS = "/view_seqs"
 PREDICT_PATH = "/predict_videos_title"
 EMBED_SIZE = 300
 NUM_SAMPLED = 64
@@ -23,7 +20,7 @@ CONTEXT_SIZE = 5
 LEARN_RATING = 1
 ITER = 1
 EPOCH = 5
-BATCH_SIZE = 600
+BATCH_SIZE = 1000
 TOP_K = 100
 MIN_CNT = 7
 
@@ -39,23 +36,28 @@ MIN_CNT = 7
 #TOP_K = 10
 #MIN_CNT = 0
 fstool = FileSystemUtil()
-def preprecessing(view_seqs):
-    viewTokenizer = ViewTokenizer(view_seqs, min_cnt=MIN_CNT)
-    videos = list(viewTokenizer.get_videos_index().keys())
-    redis = RedisDao()
-    videos_keys = redis.get_videos_key_words(videos, weighted=True)
+def preprecessing(view_seqs,video_num):
     corpus = Corpus()
-    videos_topics = corpus.build_key_words_index(videos_keys)
-    videoTokenizer = VideoTokenizer(videos_topics)
+    corpus.load_idf(TRAIN_ROOT + IDF_PATH)
+    corpus.calcu_videos_tfidf(TRAIN_ROOT + VIDEO_TITLE,video_num)
+    videos_tfidf = corpus.get_videos_tfidf()
+    videoTokenizer = VideoTokenizer(videos_tfidf)
+    viewTokenizer = ViewTokenizer(view_seqs,min_cnt=MIN_CNT)
     viewTokenizer.videos_intersection(videoTokenizer.get_videos_index())
     videoTokenizer.videos_intersection(viewTokenizer.get_videos_index())
     viewTokenizer.view_to_index_topics_seqs(videoTokenizer.get_videos_topics_index())
     fstool.save_obj(corpus, TRAIN_ROOT, "corpus")
     return viewTokenizer, videoTokenizer
+
 if __name__=="__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python topic2vec_example.py <videos_num>")
+        print("videos_num: the number of the videos title!")
+        exit(-1)
+    videos_num = int(sys.argv[1])
     input_view = open(TRAIN_ROOT + VIEW_SEQS)
     view_seqs = [line.strip().split() for line in input_view.readlines()]
-    viewTokenzier, videoTokenzier = preprecessing(view_seqs)
+    viewTokenzier, videoTokenzier = preprecessing(view_seqs, videos_num)
     topics_size = videoTokenzier.get_topics_size()
     videos_size = videoTokenzier.get_videos_size()
     topic2vec = Topic2vec(topics_size + 1, videos_size + 1, EMBED_SIZE, NUM_SAMPLED, CONTEXT_SIZE)

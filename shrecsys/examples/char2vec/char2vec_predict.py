@@ -16,7 +16,7 @@ from flask import Flask, jsonify
 from shrecsys.examples.word2vec.word2vec_example import EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K, PREDICT_ROOT, \
     PREDICT_PATH
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 logging.getLogger().setLevel(logging.INFO)
 if len(sys.argv) != 2:

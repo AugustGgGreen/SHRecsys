@@ -113,6 +113,26 @@ class Corpus(object):
         if "videos_tfidf" in clear_string:
             self.__videos_tfidf.clear()
 
+    def build_key_words_index(self, videos_keys):
+        print(videos_keys)
+        self.__word_index_dict = dict()
+        self.__word_index_dict.clear()
+        videos_topics = dict()
+        for video in videos_keys:
+            words = []
+            weights = []
+            key_words = videos_keys.get(video)
+            for key_word in key_words.keys():
+                i = self.__word_index_dict.get(key_word)
+                if i is None:
+                    i = len(self.__word_index_dict) + 1
+                    self.__word_index_dict[key_word] = i
+                words.append(i)
+                weights.append(key_words.get(key_word))
+            videos_topics[video] = [words, weights]
+        return videos_topics
+
+
 TRAIN_ROOT = '../../data/word2vec'
 IDF_PATH = '/videos_idf.txt'
 VIDEO_TITLE = '/videos_title'
