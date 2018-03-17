@@ -114,7 +114,6 @@ class Corpus(object):
             self.__videos_tfidf.clear()
 
     def build_key_words_index(self, videos_keys):
-        print(videos_keys)
         self.__word_index_dict = dict()
         self.__word_index_dict.clear()
         videos_topics = dict()

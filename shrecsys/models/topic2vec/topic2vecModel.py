@@ -84,10 +84,6 @@ class Topic2vecModel(object):
             predict_mul = tf.multiply([self.predict_embed], tf.transpose(self.predict_videos_rating))
             predict_sum = tf.reduce_sum(predict_mul, axis=1)
             predict_mean = predict_sum / tf.reduce_sum(self.predict_videos_rating)
-            predict_norm = tf.norm(predict_mean, keep_dims=True, axis=1)
-            predict_res = predict_mean / predict_norm
-            videos_norm = tf.norm(self.videos_embedding, keep_dims=True, axis=1)
-            videos_res = self.videos_embedding / videos_norm
             dist = tf.matmul(predict_mean, self.videos_embedding, transpose_b=True)
             self.top_val_s, self.top_idx_s = tf.nn.top_k(dist, k=self.top_k)
 

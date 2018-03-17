@@ -4,7 +4,6 @@ import random
 import logging
 import datetime
 import tensorflow as tf
-
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 import os
@@ -160,7 +159,7 @@ class Topic2vec(object):
                         feed_dict = {model.videos_topics: videos_topics, \
                                      model.topics_weight: topics_weight, \
                                      model.target_videos: output_batch}
-                        loss_batch, _ = sess.run([model.loss, model.nce_weight], feed_dict=feed_dict)
+                        loss_batch, _ = sess.run([model.loss, model.optimizer], feed_dict=feed_dict)
                         total_loss += loss_batch
                         batch_cnt += output_batch.shape[0]
 
@@ -175,4 +174,3 @@ class Topic2vec(object):
                     saver.save(sess, model_path+"/checkpoints/topic2vec", i)
             train_end = datetime.datetime.now()
             logging.critical("train data: {}".format(train_end - train_start))
-

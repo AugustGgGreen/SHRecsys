@@ -5,6 +5,9 @@ from __future__ import division
 from __future__ import print_function
 import sys
 
+from shrecsys.examples.char2vec.char2vec_example import PREDICT_PATH, PREDICT_ROOT, EMBED_SIZE, NUM_SAMPLED, \
+    LEARN_RATING, TOP_K
+
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.preprocessing.corpus import Corpus
 import logging
@@ -13,8 +16,7 @@ import time
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-from shrecsys.examples.word2vec.word2vec_example import EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K, PREDICT_ROOT, \
-    PREDICT_PATH
+
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
@@ -27,7 +29,7 @@ videos_num = int(sys.argv[1])
 fstool = FileSystemUtil()
 videoTokenzier = VideoTokenizer()
 corpus = Corpus()
-videoTokenzier = fstool.load_obj(PREDICT_ROOT,"videoTokenzier")
+videoTokenzier = fstool.load_obj(PREDICT_ROOT, "videoTokenzier")
 train_videos_size = videoTokenzier.get_videos_size()
 topics_size = videoTokenzier.get_topics_size()
 corpus = fstool.load_obj(PREDICT_ROOT, "corpus")
@@ -109,4 +111,4 @@ def dnn(view_line):
     return jsonify(rec_result)
 
 if __name__ == '__main__':
-    app.run(host='10.18.18.51', port=8080)
+    app.run(host='127.0.0.1', port=8080)

@@ -10,22 +10,19 @@ from shrecsys.preprocessing.corpus import Corpus
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-TRAIN_ROOT = "../../../data"
-PREDICT_ROOT = "./data_online"
-#ROOT = "../../../data/word2vec"
-IDF_PATH = "/videos_IDF.txt"
-VIDEO_TITLE = "/videos_title"
-VIEW_SEQS = "/view_test"
-PREDICT_PATH = "/predict_videos_title"
-EMBED_SIZE = 300
-NUM_SAMPLED = 64
+TRAIN_ROOT = "../../../data/word2vec/data"
+PREDICT_ROOT = "../../../data/word2vec/data"
+VIEW_SEQS = "/view_seqs"
+EMBED_SIZE = 30
+NUM_SAMPLED = 4
 CONTEXT_SIZE = 5
-LEARN_RATING = 1
+LEARN_RATING = 0.15
 ITER = 1
 EPOCH = 5
-BATCH_SIZE = 600
+BATCH_SIZE = 60
 TOP_K = 100
-MIN_CNT = 7
+MIN_CNT = 1
+CANDIDATE = False
 
 
 
@@ -52,6 +49,7 @@ def preprecessing(view_seqs):
     viewTokenizer.view_to_index_topics_seqs(videoTokenizer.get_videos_topics_index())
     fstool.save_obj(corpus, TRAIN_ROOT, "corpus")
     return viewTokenizer, videoTokenizer
+
 if __name__=="__main__":
     input_view = open(TRAIN_ROOT + VIEW_SEQS)
     view_seqs = [line.strip().split() for line in input_view.readlines()]

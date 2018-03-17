@@ -233,8 +233,6 @@ def load_videos_topics(path):
             vidRow, topics = line.split('\t')
             vid, siteid = vidRow.split(',')
             vidRes = vid + siteid
-
-            # build video_topic_dist
             topics_seq = []
             rating_seq = []
             for topic in topics.split(','):
