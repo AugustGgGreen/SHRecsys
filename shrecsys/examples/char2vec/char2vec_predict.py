@@ -4,11 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 import sys
-
-from shrecsys.examples.char2vec.char2vec_example import PREDICT_PATH, PREDICT_ROOT, EMBED_SIZE, NUM_SAMPLED, \
-    LEARN_RATING, TOP_K
-
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
+from shrecsys.examples.char2vec.char2vec_example import PREDICT_PATH, PREDICT_ROOT, EMBED_SIZE, NUM_SAMPLED, \
+    LEARN_RATING, TOP_K, CANDIDATE
 from shrecsys.preprocessing.corpus import Corpus
 import logging
 import os
@@ -16,7 +14,6 @@ import time
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
@@ -32,22 +29,19 @@ corpus = Corpus()
 videoTokenzier = fstool.load_obj(PREDICT_ROOT, "videoTokenzier")
 train_videos_size = videoTokenzier.get_videos_size()
 topics_size = videoTokenzier.get_topics_size()
-corpus = fstool.load_obj(PREDICT_ROOT, "corpus")
-corpus.calcu_videos_tfidf(PREDICT_ROOT + PREDICT_PATH, videos_num)
-videos_tfidf = corpus.get_videos_tfidf()
-videoTokenzier.set_videos_topics(videos_tfidf)
+if CANDIDATE:
+    corpus = fstool.load_obj(PREDICT_ROOT, "corpus")
+    corpus.calcu_videos_tfidf(PREDICT_ROOT + PREDICT_PATH, videos_num)
+    videos_tfidf = corpus.get_videos_tfidf()
+    videoTokenzier.set_videos_topics(videos_tfidf)
 videoTokenzier.contain_videos_on_topics()
-videoTokenzier.clear("videos_topics")
 topic2vec = Topic2vecModel(topics_size + 1, train_videos_size + 1, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K)
 predict = videoTokenzier.get_videos_index()
 index_predict = dict(zip(predict.values(), predict.keys()))
-for video in index_predict:
-     print(index_predict[video])
-print(len(index_predict))
 topic2vec.build_graph()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
-                                        gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25)))
+                                        gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.75)))
 saver = tf.train.Saver()
 ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(PREDICT_ROOT, "checkpoints/checkpoint")))
 if ckpt and ckpt.model_checkpoint_path:
@@ -111,4 +105,4 @@ def dnn(view_line):
     return jsonify(rec_result)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080)
+    app.run(host='10.18.18.51', port=8080)

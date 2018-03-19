@@ -7,22 +7,22 @@ from shrecsys.preprocessing.corpus import Corpus
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
-TRAIN_ROOT = "./data"
-PREDICT_ROOT = "./data_online"
-#ROOT = "../../../data/word2vec"
+TRAIN_ROOT = "../../../data/char2vec/data"
+PREDICT_ROOT = "../../../data/char2vec/data"
 IDF_PATH = "/videos_IDF.txt"
 VIDEO_TITLE = "/videos_title"
 VIEW_SEQS = "/view_seqs"
-PREDICT_PATH = "/predict_videos_title"
+PREDICT_PATH = "/videos_title"
 EMBED_SIZE = 300
 NUM_SAMPLED = 64
 CONTEXT_SIZE = 5
 LEARN_RATING = 1
 ITER = 1
 EPOCH = 5
-BATCH_SIZE = 1000
+BATCH_SIZE = 30
 TOP_K = 100
 MIN_CNT = 7
+CANDIDATE = False
 
 
 
@@ -42,7 +42,7 @@ def preprecessing(view_seqs,video_num):
     corpus.calcu_videos_tfidf(TRAIN_ROOT + VIDEO_TITLE,video_num)
     videos_tfidf = corpus.get_videos_tfidf()
     videoTokenizer = VideoTokenizer(videos_tfidf)
-    viewTokenizer = ViewTokenizer(view_seqs,min_cnt=MIN_CNT)
+    viewTokenizer = ViewTokenizer(view_seqs, min_cnt=MIN_CNT)
     viewTokenizer.videos_intersection(videoTokenizer.get_videos_index())
     videoTokenizer.videos_intersection(viewTokenizer.get_videos_index())
     viewTokenizer.view_to_index_topics_seqs(videoTokenizer.get_videos_topics_index())
