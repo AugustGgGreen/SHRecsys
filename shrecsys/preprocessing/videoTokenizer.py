@@ -171,25 +171,51 @@ class VideoTokenizer(object):
                          .format(len(self.__videos_topics_index)))
         self.__rebuild_video_index()
 
-    def videos_topics_index_to_sparse(self):
+    def videos_topics_index_to_sparse(self, batch_size=None):
         predict_topics_idx = []
         predict_topics_values = []
         predict_weight = []
         index = 0
-        for vid in self.__videos_topics_index:
-            if index % 100000 == 0:
-                logging.critical('convert videos topics index to spare, the index: {}'.format(index))
-            sparse_topics = self.__video_topic_to_sparse(index,vid)
-            for topic_idx in sparse_topics[0]:
-                predict_topics_idx.append(topic_idx)
-            for topic_values in sparse_topics[1]:
-                predict_topics_values.append(topic_values)
+        if batch_size is None:
+            for vid in self.__videos_topics_index:
+                if index % 100000 == 0:
+                    logging.critical('convert videos topics index to spare, the index: {}'.format(index))
+                sparse_topics = self.__video_topic_to_sparse(index,vid)
+                for topic_idx in sparse_topics[0]:
+                    predict_topics_idx.append(topic_idx)
+                for topic_values in sparse_topics[1]:
+                    predict_topics_values.append(topic_values)
 
-            for weight in self.__videos_topics_index[vid][1]:
-                predict_weight.append(weight)
-            index += 1
-        sparse_predict = [predict_topics_idx, predict_topics_values, predict_weight]
-        return sparse_predict
+                for weight in self.__videos_topics_index[vid][1]:
+                    predict_weight.append(weight)
+                index += 1
+            sparse_predict = [predict_topics_idx, predict_topics_values, predict_weight]
+            return sparse_predict
+        else:
+            i = 0
+            sparse_predict = []
+            for vid in self.__videos_topics_index:
+                if i > batch_size:
+                    sparse_predict.append([predict_topics_idx, predict_topics_values, predict_weight])
+                    i = 0
+                    predict_topics_idx = []
+                    predict_topics_values = []
+                    predict_weight = []
+                if index % 100000 == 0:
+                    logging.critical('convert videos topics index to spare, the index: {}'.format(index))
+                sparse_topics = self.__video_topic_to_sparse(i, vid)
+                for topic_idx in sparse_topics[0]:
+                    predict_topics_idx.append(topic_idx)
+                for topic_values in sparse_topics[1]:
+                    predict_topics_values.append(topic_values)
+
+                for weight in self.__videos_topics_index[vid][1]:
+                    predict_weight.append(weight)
+                index += 1
+                i += 1
+            if len(predict_topics_idx) > 0:
+                sparse_predict.append([predict_topics_idx, predict_topics_values, predict_weight])
+            return sparse_predict
 
     def get_videos_index(self):
         return self.__videos_index

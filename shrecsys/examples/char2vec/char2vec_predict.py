@@ -1,5 +1,4 @@
 # -*- coding:utf-8 -*-
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -34,7 +33,7 @@ if CANDIDATE:
     corpus.calcu_videos_tfidf(PREDICT_ROOT + PREDICT_PATH, videos_num)
     videos_tfidf = corpus.get_videos_tfidf()
     videoTokenzier.set_videos_topics(videos_tfidf)
-videoTokenzier.contain_videos_on_topics()
+    videoTokenzier.contain_videos_on_topics()
 topic2vec = Topic2vecModel(topics_size + 1, train_videos_size + 1, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K)
 predict = videoTokenzier.get_videos_index()
 index_predict = dict(zip(predict.values(), predict.keys()))
@@ -48,14 +47,18 @@ if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 
 logging.critical("tf model init successfully!")
-predict_sparse = videoTokenzier.videos_topics_index_to_sparse()
-videos_topics = tf.SparseTensorValue(indices=predict_sparse[0], \
-                                                values=predict_sparse[1], dense_shape=(len(index_predict),50000))
-topics_weight = tf.SparseTensorValue(indices=predict_sparse[0], \
-                                                values=predict_sparse[2], dense_shape=(len(index_predict),50000))
-feed = {topic2vec.predict_videos_topics:videos_topics, \
-        topic2vec.predict_topics_weight:topics_weight}
-videos_embedding = sess.run([topic2vec.videos_embedding], feed_dict=feed)
+predict_batch_size = 1000
+videos_embedding = []
+predict_sparse = videoTokenzier.videos_topics_index_to_sparse(batch_size=predict_batch_size)
+for batches in predict_sparse:
+    videos_topics = tf.SparseTensorValue(indices=batches[0], \
+                                                values=batches[1], dense_shape=(predict_batch_size, 50000))
+    topics_weight = tf.SparseTensorValue(indices=batches[0], \
+                                                values=batches[2], dense_shape=(predict_batch_size, 50000))
+    feed = {topic2vec.predict_videos_topics:videos_topics, \
+            topic2vec.predict_topics_weight:topics_weight}
+    videos_embedding_batches = sess.run([topic2vec.videos_embedding], feed_dict=feed)
+    videos_embedding.extend(videos_embedding_batches[0])
 logging.critical("create topic successful")
 app = Flask(__name__)
 
@@ -87,7 +90,7 @@ def dnn(view_line):
         use_rating = np.expand_dims(use_rating, axis=0)
         logging.critical("user:{}".format(seq))
         logging.critical("rating{}:".format(use_rating))
-        top_idx, top_val = sess.run([topic2vec.top_idx, topic2vec.top_val], {topic2vec.seq: seq, topic2vec.rating: use_rating, topic2vec.videos_embedding: videos_embedding[0]})
+        top_idx, top_val = sess.run([topic2vec.top_idx, topic2vec.top_val], {topic2vec.seq: seq, topic2vec.rating: use_rating, topic2vec.videos_embedding: videos_embedding})
         top_idx = top_idx[0]
         top_val = top_val[0]
         idx_seq = set(idx_seq)
