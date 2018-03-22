@@ -248,6 +248,16 @@ class VideoTokenizer(object):
         self.__videos_topics = videos_topics
         self.__build_tokenizer()
 
+    def load_videos_embedding(self,path):
+        input = open(path, "r")
+        line = input.readline()
+        videos_embedding = dict()
+        while line:
+            vid, vector=line.strip().split('\t')
+            video_vec = [float(x) for x in vector.split(',')]
+            videos_embedding[vid] = video_vec
+            line = input.readline()
+        return videos_embedding
 
 def load_videos_topics(path):
     video_topic = dict()

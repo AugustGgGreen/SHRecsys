@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 import logging
+import tensorflow as tf
+import numpy as np
 class ViewTokenizer(object):
     def __init__(self, view_seqs, video_index=None, min_cnt=0):
         self.__view_seqs = view_seqs
@@ -21,10 +23,8 @@ class ViewTokenizer(object):
                 self.__view_to_index_seqs()
 
     def __build_videos_index(self):
-        self.__videos_index = dict()
         if self.__view_seqs is None:
-            raise ValueError("the view seqs is None, please set the view seqs!")
-        else:
+            self.__videos_index = dict()
             index = 0
             for video in self.__video_count.keys():
                 if index % 100000 == 0:
@@ -46,6 +46,31 @@ class ViewTokenizer(object):
                 else:
                     self.__video_count[video] = 1
 
+    def __seqs_sparse(self, is_rating, user_seqs_index=None):
+        if user_seqs_index is None:
+            users_seq = self.__view_seqs_index
+        else:
+            users_seq = user_seqs_index
+        size = len(users_seq)
+        ids = []
+        values = []
+        weight = []
+        max_len = 0
+        for i, user_seq in enumerate(users_seq):
+            if is_rating:
+                seq = user_seq[0]
+                rating = user_seq[1]
+            else:
+                seq = user_seq
+                rating = [1 for x in seq]
+            if max_len < len(user_seq):
+                max_len = len(user_seq)
+            for j, video in enumerate(seq):
+                ids.append([i, j])
+                values.append(video)
+                weight.append(rating[j])
+        return [ids, values, weight], size, max_len
+
     def __view_to_index_seqs(self):
         self.__view_seqs_index = []
         self.__view_seqs_filter = []
@@ -63,6 +88,38 @@ class ViewTokenizer(object):
                     view_seq_filter.append(video)
             self.__view_seqs_index.append(view_seq_index)
             self.__view_seqs_filter.append(view_seq_filter)
+
+    def generate_users_embedding(self, videos_embedding, view_seqs_index=None, is_rating=False):
+        videos_embedding = np.array(videos_embedding)
+        #print(videos_embedding.shape)
+        view_seqs_tensor = tf.sparse_placeholder(tf.int32, name="user_seqs")
+        videos_embed = tf.placeholder(tf.float32, videos_embedding.shape, name="videos_embedding")
+        videos_rating_tensor = tf.sparse_placeholder(tf.float32, name="videos_rating")
+        user_embeding = tf.nn.embedding_lookup_sparse(params=videos_embed, sp_ids=view_seqs_tensor, \
+                                                      sp_weights=videos_rating_tensor, combiner="mean")
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True,
+                log_device_placement=True,
+                gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25))) as sess:
+            sess.run(tf.global_variables_initializer())
+            user_batch, size, max_len = self.__seqs_sparse(is_rating, view_seqs_index)
+            print(user_batch)
+            view_seqs_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
+                                             dense_shape=(size, max_len))
+            rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
+                                          dense_shape=(size, max_len))
+            embeding = sess.run([user_embeding],
+                                feed_dict={videos_embed: videos_embedding, view_seqs_tensor: view_seqs_input, videos_rating_tensor: rating})
+        return embeding
+
+    def get_videos_index(self):
+        return self.__videos_index
+
+    def get_view_index(self):
+        return self.__view_seqs_index
+
+    def get_view_topics_index(self):
+        return self.__view_seqs_topics
 
     def videos_intersection(self, videos_index):
         if self.__videos_index is None:
@@ -91,12 +148,3 @@ class ViewTokenizer(object):
                 else:
                     view_seq_topics.append(topics)
             self.__view_seqs_topics.append(view_seq_topics)
-
-    def get_videos_index(self):
-        return self.__videos_index
-
-    def get_view_index(self):
-        return self.__view_seqs_index
-
-    def get_view_topics_index(self):
-        return self.__view_seqs_topics
