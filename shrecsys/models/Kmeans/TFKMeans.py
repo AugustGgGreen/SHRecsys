@@ -1,8 +1,9 @@
 # -*- coding:utf-8 -*-
 import os
 import tensorflow as tf
-from tensorflow.contrib.factorization import KMeans, logging
-logging._logger.setLevel(logging.INFO)
+import logging
+from tensorflow.contrib.factorization import KMeans
+logging.getLogger().setLevel(logging.INFO)
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 class TFKMeansCluster(object):
     def __init__(self, num_cluster, num_feature, num_iter):

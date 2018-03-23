@@ -23,4 +23,4 @@ if __name__=="__main__":
     users_embedding = generate_embedding(view_seqs)
     print(users_embedding)
     model = TFKMeansCluster(num_cluster=3, num_feature=300, num_iter=10)
-    model.train(users_embedding[0])
+    model.train(users_embedding)

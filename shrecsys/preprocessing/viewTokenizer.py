@@ -2,6 +2,8 @@
 import logging
 import tensorflow as tf
 import numpy as np
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 class ViewTokenizer(object):
     def __init__(self, view_seqs, video_index=None, min_cnt=0):
         self.__view_seqs = view_seqs
