@@ -86,12 +86,12 @@ class ViewTokenizer(object):
                 if video_index is not None:
                     view_seq_index.append(video_index)
                     view_seq_filter.append(video)
-            self.__view_seqs_index.append(view_seq_index)
-            self.__view_seqs_filter.append(view_seq_filter)
+            if len(view_seq_index) > 0:
+                self.__view_seqs_index.append(view_seq_index)
+                self.__view_seqs_filter.append(view_seq_filter)
 
     def generate_users_embedding(self, videos_embedding, view_seqs_index=None, is_rating=False):
         videos_embedding = np.array(videos_embedding)
-        #print(videos_embedding.shape)
         view_seqs_tensor = tf.sparse_placeholder(tf.int32, name="user_seqs")
         videos_embed = tf.placeholder(tf.float32, videos_embedding.shape, name="videos_embedding")
         videos_rating_tensor = tf.sparse_placeholder(tf.float32, name="videos_rating")
@@ -103,7 +103,6 @@ class ViewTokenizer(object):
                 gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25))) as sess:
             sess.run(tf.global_variables_initializer())
             user_batch, size, max_len = self.__seqs_sparse(is_rating, view_seqs_index)
-            print(user_batch)
             view_seqs_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
                                              dense_shape=(size, max_len))
             rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
