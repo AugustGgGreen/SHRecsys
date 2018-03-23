@@ -46,30 +46,63 @@ class ViewTokenizer(object):
                 else:
                     self.__video_count[video] = 1
 
-    def __seqs_sparse(self, is_rating, user_seqs_index=None):
+    def __seqs_sparse(self, is_rating, batch_size=None, user_seqs_index=None):
         if user_seqs_index is None:
             users_seq = self.__view_seqs_index
         else:
             users_seq = user_seqs_index
-        size = len(users_seq)
-        ids = []
-        values = []
-        weight = []
-        max_len = 0
-        for i, user_seq in enumerate(users_seq):
-            if is_rating:
-                seq = user_seq[0]
-                rating = user_seq[1]
-            else:
-                seq = user_seq
-                rating = [1 for x in seq]
-            if max_len < len(user_seq):
-                max_len = len(user_seq)
-            for j, video in enumerate(seq):
-                ids.append([i, j])
-                values.append(video)
-                weight.append(rating[j])
-        return [ids, values, weight], size, max_len
+        if batch_size is None:
+            size = len(users_seq)
+            ids = []
+            values = []
+            weight = []
+            max_len = 0
+            for i, user_seq in enumerate(users_seq):
+                if is_rating:
+                    seq = user_seq[0]
+                    rating = user_seq[1]
+                else:
+                    seq = user_seq
+                    rating = [1 for x in seq]
+                if max_len < len(user_seq):
+                    max_len = len(user_seq)
+                for j, video in enumerate(seq):
+                    ids.append([i, j])
+                    values.append(video)
+                    weight.append(rating[j])
+            return [[ids, values, weight]], size, max_len
+        else:
+            size = batch_size
+            batches = []
+            ids = []
+            values = []
+            weight = []
+            max_len = 0
+            t = 0
+            for i, user_seq in enumerate(users_seq):
+                if t == batch_size:
+                    batches.append([ids, values, weight])
+                    ids = []
+                    values = []
+                    weight = []
+                    t = 0
+                if is_rating:
+                    seq = user_seq[0]
+                    rating = user_seq[1]
+                else:
+                    seq = user_seq
+                    rating = [1 for x in seq]
+                if max_len < len(user_seq):
+                    max_len = len(user_seq)
+                for j, video in enumerate(seq):
+                    ids.append([t, j])
+                    values.append(video)
+                    weight.append(rating[j])
+                t += 1
+            if len(ids) > 0:
+                batches.append([ids, values, weight])
+            return batches, size, max_len
+
 
     def __view_to_index_seqs(self):
         self.__view_seqs_index = []
@@ -90,26 +123,31 @@ class ViewTokenizer(object):
                 self.__view_seqs_index.append(view_seq_index)
                 self.__view_seqs_filter.append(view_seq_filter)
 
-    def generate_users_embedding(self, videos_embedding, view_seqs_index=None, is_rating=False):
+    def generate_users_embedding(self, videos_embedding, batch_size=None, view_seqs_index=None, is_rating=False):
         videos_embedding = np.array(videos_embedding)
         view_seqs_tensor = tf.sparse_placeholder(tf.int32, name="user_seqs")
         videos_embed = tf.placeholder(tf.float32, videos_embedding.shape, name="videos_embedding")
         videos_rating_tensor = tf.sparse_placeholder(tf.float32, name="videos_rating")
         user_embeding = tf.nn.embedding_lookup_sparse(params=videos_embed, sp_ids=view_seqs_tensor, \
                                                       sp_weights=videos_rating_tensor, combiner="mean")
+        users_embedding = []
         with tf.Session(config=tf.ConfigProto(
                 allow_soft_placement=True,
                 log_device_placement=True,
                 gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25))) as sess:
             sess.run(tf.global_variables_initializer())
-            user_batch, size, max_len = self.__seqs_sparse(is_rating, view_seqs_index)
-            view_seqs_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
-                                             dense_shape=(size, max_len))
-            rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
-                                          dense_shape=(size, max_len))
-            embeding = sess.run([user_embeding],
-                                feed_dict={videos_embed: videos_embedding, view_seqs_tensor: view_seqs_input, videos_rating_tensor: rating})
-        return embeding
+            user_batches, size, max_len = self.__seqs_sparse(is_rating, batch_size, view_seqs_index)
+            for user_batch in user_batches:
+                view_seqs_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
+                                                       dense_shape=(size, max_len))
+                rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
+                                              dense_shape=(size, max_len))
+                embedding = sess.run([user_embeding],
+                                    feed_dict={videos_embed: videos_embedding,
+                                               view_seqs_tensor: view_seqs_input,
+                                               videos_rating_tensor: rating})
+                users_embedding.extend(embedding[0])
+        return users_embedding
 
     def get_videos_index(self):
         return self.__videos_index

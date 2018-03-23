@@ -1,9 +1,8 @@
 # -*- coding:utf-8 -*-
 import sys
 
-from shrecsys.util.redisDao import RedisDao
-
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
+from shrecsys.util.redisDao import RedisDao
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
