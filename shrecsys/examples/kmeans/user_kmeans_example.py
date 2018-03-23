@@ -20,5 +20,6 @@ if __name__=="__main__":
     view_seqs = [line.strip().split() for line in input_view.readlines()]
     users_embedding = generate_embedding(view_seqs)
     kmeans = KMeans(n_clusters=4,random_state=0).fit(users_embedding[0])
+    print(kmeans.cluster_centers_)
     print(kmeans.predict(users_embedding[0]))
     #print(kmeans.cluster_centers)
