@@ -1,12 +1,12 @@
 # -*- coding:utf-8 -*-
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 ROOT = "../../../data/topic2vec/"
 VIDEO_TOPIC = "../../../data/topic2vec/mvrsData.20180111"
-VIEW_SEQS = "../../../data/view_seqs"
+VIEW_SEQS = "../../../data/topic2vec/view_test"
 EMBED_SIZE = 30
 NUM_SAMPLED = 6
 CONTEXT_SIZE = 2
@@ -20,7 +20,7 @@ PREDICT_PATH = "../../../data/topic2vec/mvrsData.20180111"
 fstool = FileSystemUtil()
 def preprecessing(view_seqs):
     videoTokenzier = VideoTokenizer()
-    videoTokenzier.load_videos_topics(VIDEO_TOPIC, videos_topics)
+    videoTokenzier.load_videos_topics(VIDEO_TOPIC, load_videos_topics)
     viewTokenizer = ViewTokenizer(view_seqs)
     viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
     videoTokenzier.videos_intersection(viewTokenizer.get_videos_index())

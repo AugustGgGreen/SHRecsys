@@ -5,7 +5,8 @@ import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 class ViewTokenizer(object):
-    def __init__(self, view_seqs, video_index=None, min_cnt=0):
+    def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0):
+        self.__with_userid = with_userid
         self.__view_seqs = view_seqs
         self.__videos_index = video_index
         self.__min_cnt = min_cnt
@@ -25,7 +26,7 @@ class ViewTokenizer(object):
                 self.__view_to_index_seqs()
 
     def __build_videos_index(self):
-        if self.__view_seqs is None:
+        if self.__videos_index is None and self.__view_seqs is not None:
             self.__videos_index = dict()
             index = 0
             for video in self.__video_count.keys():
@@ -34,6 +35,8 @@ class ViewTokenizer(object):
                 index += 1
                 if self.__video_count.get(video) > self.__min_cnt:
                     self.__videos_index[video] = len(self.__videos_index) + 1
+
+
 
     def __count_video(self):
         self.__video_count = dict()
@@ -109,6 +112,7 @@ class ViewTokenizer(object):
     def __view_to_index_seqs(self):
         self.__view_seqs_index = []
         self.__view_seqs_filter = []
+        self.__user_index = dict()
         index = 0
         for view_seq in self.__view_seqs:
             if index % 100000 == 0:
@@ -116,6 +120,9 @@ class ViewTokenizer(object):
             index += 1
             view_seq_index = []
             view_seq_filter = []
+            if self.__with_userid:
+                userid = view_seq[0]
+                view_seq = view_seq[1:]
             for video in view_seq:
                 video_index = self.__videos_index.get(video)
                 if video_index is not None:
@@ -124,6 +131,9 @@ class ViewTokenizer(object):
             if len(view_seq_index) > 0:
                 self.__view_seqs_index.append(view_seq_index)
                 self.__view_seqs_filter.append(view_seq_filter)
+                self.__user_index[userid] = len(self.__user_index)
+        self.__index_user = dict(zip(self.__user_index.values(),self.__user_index.keys()))
+
 
     def generate_users_embedding(self, videos_embedding, batch_size=None, view_seqs_index=None, is_rating=False):
         videos_embedding = np.array(videos_embedding)
@@ -151,6 +161,9 @@ class ViewTokenizer(object):
                 users_embedding.extend(embedding[0])
         return users_embedding
 
+    def get_index_user(self):
+        return self.__index_user
+
     def get_videos_index(self):
         return self.__videos_index
 
@@ -159,6 +172,9 @@ class ViewTokenizer(object):
 
     def get_view_topics_index(self):
         return self.__view_seqs_topics
+
+    def get_user_index(self):
+        return self.__user_index
 
     def videos_intersection(self, videos_index):
         if self.__videos_index is None:

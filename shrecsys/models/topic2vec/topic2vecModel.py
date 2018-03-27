@@ -60,16 +60,13 @@ class Topic2vecModel(object):
             tf.summary.scalar("loss", self.loss)
             tf.summary.histogram("histogram_loss", self.loss)
             self.summary_op = tf.summary.merge_all()
+            #self.writer = tf.summary.FileWriter("./" + "/test")
 
     def _create_top_k(self):
         with tf.name_scope("top_k"):
-            self.seq = tf.placeholder(shape=[1,None], dtype=tf.int32)
+            self.seq = tf.placeholder(shape=[1, None], dtype=tf.int32)
             self.rating = tf.placeholder(shape=[1, None], dtype=tf.float32)
             predict_mean = self.weight_mean(self.seq, self.rating)
-            predict_norm = tf.norm(predict_mean, keep_dims=True, axis=1)
-            predict_res = predict_mean / predict_norm
-            videos_norm = tf.norm(self.videos_embedding, keep_dims=True, axis=1)
-            videos_res = self.videos_embedding / videos_norm
             dist = tf.matmul(predict_mean, self.videos_embedding, transpose_b=True)
             self.top_val, self.top_idx = tf.nn.top_k(dist, k=self.top_k)
 

@@ -172,5 +172,6 @@ class Topic2vec(object):
                 total_loss = 0.0
                 if (i + 1) % save_iter == 0:
                     saver.save(sess, model_path+"/checkpoints/topic2vec", i)
+                #model.writer.add_summary([total_loss/batch_cnt, i])
             train_end = datetime.datetime.now()
             logging.critical("train data: {}".format(train_end - train_start))

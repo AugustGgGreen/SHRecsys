@@ -264,7 +264,8 @@ def load_videos_topics(path):
     with open(path) as f:
         index = 0
         for line in itertools.islice(f, 0, None):
-            logging.critical('the load the videos topics form path:{} the index:{}'.format(path, index))
+            if index % 100000 == 0:
+                logging.critical('the load the videos topics form path:{} the index:{}'.format(path, index))
             index += 1
             vidRow, topics = line.split('\t')
             vid, siteid = vidRow.split(',')
