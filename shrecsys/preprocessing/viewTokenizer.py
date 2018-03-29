@@ -192,6 +192,35 @@ class ViewTokenizer(object):
             clusters_top_k_videos.append(res)
         return clusters_top_k_videos
 
+    def cluster_top_k_tfidf_test(self, videos_sets, videos_sets_unique, top_k=10):
+        clusters_top_k_videos = []
+        vectorizer = CountVectorizer()
+        videos_x = [" ".join(videos_set) for videos_set in videos_sets]
+        X = vectorizer.fit_transform(videos_x)
+        videos = vectorizer.get_feature_names()
+        index_videos = dict(zip([i for i in range(len(videos))], vectorizer.get_feature_names()))
+        tfidf_transformer = TfidfTransformer()
+        tfidf = tfidf_transformer.fit_transform(X).todense()
+        unique_videos_x = [" ".join(videos_set) for videos_set in videos_sets_unique]
+        unique_X = vectorizer.fit_transform(unique_videos_x)
+        unique_tfidf = tfidf_transformer.fit_transform(unique_X).todense()
+        dense_tfidf = np.multiply(tfidf, unique_tfidf)
+        input = tf.placeholder(tf.float32, shape=dense_tfidf.shape, name='input')
+        top_value, top_idx = tf.nn.top_k(input, k=top_k)
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True,
+                log_device_placement=True,
+                gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.45))) as sess:
+            top_value, top_idx = sess.run([top_value, top_idx], feed_dict={input: dense_tfidf})
+            sess.close()
+        col, row = top_idx.shape
+        for i in range(col):
+            res = []
+            for j in range(row):
+                res.append((index_videos[top_idx[i][j]], top_value[i][j]))
+            clusters_top_k_videos.append(res)
+        return clusters_top_k_videos
+
 
     def clusters_users_seqs(self, clusters_user, index=True, unique=True):
         '''
