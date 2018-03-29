@@ -1,4 +1,7 @@
 # -*- coding:utf-8 -*-
+
+import sys
+sys.path.append("/data/app/xuezhengyin/test/shrecsys")
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
