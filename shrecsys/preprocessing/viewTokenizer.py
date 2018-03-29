@@ -4,17 +4,16 @@ import logging
 import numpy as np
 import tensorflow as tf
 from collections import Counter
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.feature_extraction.text import CountVectorizer
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
+logging.getLogger().setLevel(logging.INFO)
 class ViewTokenizer(object):
-    def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0):
+    def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0, max_rate=0.8):
         self.__with_userid = with_userid
         self.__view_seqs = view_seqs
         self.__videos_index = video_index
         self.__min_cnt = min_cnt
+        self.__max_rate = max_rate
         self.__view_seqs_index = None
-        self.__video_count = None
         self.__view_seqs_filter = view_seqs
         self.__view_seqs_topics = None
         self.__build_tokenizer()
@@ -34,10 +33,12 @@ class ViewTokenizer(object):
             index = 0
             for video in self.__video_count.keys():
                 if index % 100000 == 0:
-                    logging.critical('build videos index in view, videos index:{}'.format(index))
+                    logging.info('build videos index in view, videos index:{}'.format(index))
                 index += 1
-                if self.__video_count.get(video) > self.__min_cnt:
+                video_num = self.__video_count.get(video)
+                if video_num > self.__min_cnt and video_num / len(self.__view_seqs) <= self.__max_rate:
                     self.__videos_index[video] = len(self.__videos_index) + 1
+        logging.info('build videos index in view success, videos size:{}'.format(len(self.__videos_index)))
 
     def __count_video(self):
         self.__video_count = dict()
@@ -132,8 +133,10 @@ class ViewTokenizer(object):
             if len(view_seq_index) > 0:
                 self.__view_seqs_index.append(view_seq_index)
                 self.__view_seqs_filter.append(view_seq_filter)
-                self.__user_index[userid] = len(self.__user_index)
-        self.__index_user = dict(zip(self.__user_index.values(), self.__user_index.keys()))
+                if self.__with_userid:
+                    self.__user_index[userid] = len(self.__user_index)
+        if self.__with_userid:
+            self.__index_user = dict(zip(self.__user_index.values(), self.__user_index.keys()))
 
     def cluster_top_k(self, users_index=None, top_k=10):
         '''
@@ -165,61 +168,6 @@ class ViewTokenizer(object):
                 res.append((video,videos_sort[video]))
         print(res)
         return res
-
-    def cluster_top_k_tfidf(self, videos_sets, top_k=10):
-        clusters_top_k_videos = []
-        vectorizer = CountVectorizer()
-        videos_x = [" ".join(videos_set) for videos_set in videos_sets]
-        X = vectorizer.fit_transform(videos_x)
-        videos = vectorizer.get_feature_names()
-        index_videos = dict(zip([i for i in range(len(videos))], vectorizer.get_feature_names()))
-        tfidf_transformer = TfidfTransformer()
-        tfidf = tfidf_transformer.fit_transform(X)
-        dense_tfidf = tfidf.todense()
-        input = tf.placeholder(tf.float32, shape=dense_tfidf.shape, name='input')
-        top_value, top_idx = tf.nn.top_k(input, k = top_k)
-        with tf.Session(config=tf.ConfigProto(
-                allow_soft_placement=True,
-                log_device_placement=True,
-                gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.45))) as sess:
-            top_value, top_idx = sess.run([top_value, top_idx], feed_dict={input:dense_tfidf})
-            sess.close()
-        col, row = top_idx.shape
-        for i in range(col):
-            res = []
-            for j in range(row):
-                res.append((index_videos[top_idx[i][j]], top_value[i][j]))
-            clusters_top_k_videos.append(res)
-        return clusters_top_k_videos
-
-    def cluster_top_k_tfidf_test(self, videos_sets, videos_sets_unique, top_k=10):
-        clusters_top_k_videos = []
-        vectorizer = CountVectorizer()
-        videos_x = [" ".join(videos_set) for videos_set in videos_sets]
-        X = vectorizer.fit_transform(videos_x)
-        videos = vectorizer.get_feature_names()
-        index_videos = dict(zip([i for i in range(len(videos))], vectorizer.get_feature_names()))
-        tfidf_transformer = TfidfTransformer()
-        tfidf = tfidf_transformer.fit_transform(X).todense()
-        unique_videos_x = [" ".join(videos_set) for videos_set in videos_sets_unique]
-        unique_X = vectorizer.fit_transform(unique_videos_x)
-        unique_tfidf = tfidf_transformer.fit_transform(unique_X).todense()
-        dense_tfidf = np.multiply(tfidf, unique_tfidf)
-        input = tf.placeholder(tf.float32, shape=dense_tfidf.shape, name='input')
-        top_value, top_idx = tf.nn.top_k(input, k=top_k)
-        with tf.Session(config=tf.ConfigProto(
-                allow_soft_placement=True,
-                log_device_placement=True,
-                gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.45))) as sess:
-            top_value, top_idx = sess.run([top_value, top_idx], feed_dict={input: dense_tfidf})
-            sess.close()
-        col, row = top_idx.shape
-        for i in range(col):
-            res = []
-            for j in range(row):
-                res.append((index_videos[top_idx[i][j]], top_value[i][j]))
-            clusters_top_k_videos.append(res)
-        return clusters_top_k_videos
 
 
     def clusters_users_seqs(self, clusters_user, index=True, unique=True):
@@ -259,6 +207,14 @@ class ViewTokenizer(object):
         return videos
 
     def generate_users_embedding(self, videos_embedding, batch_size=None, view_seqs_index=None, is_rating=False):
+        '''
+        生成用户的embedding
+        :param videos_embedding: 视频embedding
+        :param batch_size: 在生成用户embedding过程中每次生成过程执行的batch大小
+        :param view_seqs_index: 索引化后的用户观影序列
+        :param is_rating: 视频是否加权
+        :return: 用户的embedding
+        '''
         videos_embedding = np.array(videos_embedding)
         view_seqs_tensor = tf.sparse_placeholder(tf.int32, name="user_seqs")
         videos_embed = tf.placeholder(tf.float32, videos_embedding.shape, name="videos_embedding")

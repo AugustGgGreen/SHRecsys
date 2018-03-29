@@ -5,7 +5,7 @@ from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_to
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 ROOT = "../../../data/topic2vec/"
-VIDEO_TOPIC = "../../../data/topic2vec/mvrsData.20180111"
+VIDEO_TOPIC = "../../../data/topic2vec/train_videos"
 VIEW_SEQS = "../../../data/topic2vec/view_test"
 EMBED_SIZE = 30
 NUM_SAMPLED = 6
