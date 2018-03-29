@@ -1,8 +1,11 @@
 # -*- coding:utf-8 -*-
-import logging
-import tensorflow as tf
-import numpy as np
 import os
+import logging
+import numpy as np
+import tensorflow as tf
+from collections import Counter
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 class ViewTokenizer(object):
     def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0):
@@ -35,8 +38,6 @@ class ViewTokenizer(object):
                 index += 1
                 if self.__video_count.get(video) > self.__min_cnt:
                     self.__videos_index[video] = len(self.__videos_index) + 1
-
-
 
     def __count_video(self):
         self.__video_count = dict()
@@ -132,8 +133,101 @@ class ViewTokenizer(object):
                 self.__view_seqs_index.append(view_seq_index)
                 self.__view_seqs_filter.append(view_seq_filter)
                 self.__user_index[userid] = len(self.__user_index)
-        self.__index_user = dict(zip(self.__user_index.values(),self.__user_index.keys()))
+        self.__index_user = dict(zip(self.__user_index.values(), self.__user_index.keys()))
 
+    def cluster_top_k(self, users_index=None, top_k=10):
+        '''
+        给出某个用户结合，返回该用户集合中被观看的视频序列前top k的结果
+        :param users_index: 给出用户集合
+        :param top_k: 取视频的top k结果
+        :return:
+        '''
+        counter = Counter()
+        if users_index is None:
+            raise TypeError("the user_index should be set or list!")
+        for user_index in users_index:
+            if self.__with_userid:
+                counter.update(self.__view_seqs[user_index][1:])
+            else:
+                counter.update(self.__view_seqs)
+        res = counter.most_common(top_k)
+        return res
+
+    def __top_k_videos(self, value_list, top_k, index_videos):
+        videos_tfidf = dict()
+        for i, value in enumerate(value_list):
+            if value > 0:
+                videos_tfidf[index_videos[i]] = value
+        videos_sort = sorted(videos_tfidf.items(), key=np.operator.itemgetter(1))
+        res = []
+        for i, video in enumerate(videos_sort):
+            if i >= top_k:
+                res.append((video,videos_sort[video]))
+        print(res)
+        return res
+
+    def cluster_top_k_tfidf(self, videos_sets, top_k=10):
+        clusters_top_k_videos = []
+        vectorizer = CountVectorizer()
+        videos_x = [" ".join(videos_set) for videos_set in videos_sets]
+        X = vectorizer.fit_transform(videos_x)
+        videos = vectorizer.get_feature_names()
+        index_videos = dict(zip([i for i in range(len(videos))], vectorizer.get_feature_names()))
+        tfidf_transformer = TfidfTransformer()
+        tfidf = tfidf_transformer.fit_transform(X)
+        dense_tfidf = tfidf.todense()
+        input = tf.placeholder(tf.float32, shape=dense_tfidf.shape, name='input')
+        top_value, top_idx = tf.nn.top_k(input, k = top_k)
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True,
+                log_device_placement=True,
+                gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.45))) as sess:
+            top_value, top_idx = sess.run([top_value, top_idx], feed_dict={input:dense_tfidf})
+            sess.close()
+        col, row = top_idx.shape
+        for i in range(col):
+            res = []
+            for j in range(row):
+                res.append((index_videos[top_idx[i][j]], top_value[i][j]))
+            clusters_top_k_videos.append(res)
+        return clusters_top_k_videos
+
+
+    def clusters_users_seqs(self, clusters_user, index=True, unique=True):
+        '''
+        给出用户的聚类结果，返回每个类簇中包含的视频列表
+        :param clusters_user:
+        :return:
+        '''
+        clusters_videos= []
+        for cluster_user in clusters_user:
+            if unique:
+                clusters_videos.append(set(self.get_cluster_videos(cluster_user, index=index)))
+            else:
+                clusters_videos.append(self.get_cluster_videos(cluster_user, index=index))
+        return clusters_videos
+
+    def get_cluster_videos(self, users, index=True):
+        '''
+        给出一个用户集合，返回该用户集合观影序列的视频列表
+        :param users: 聚类后的用户集合
+        :param index: 用户集合是索引表示的时候 index=True 用户集合用user id表示的时候 index=False
+        :return:
+        '''
+        videos = []
+        if index:
+            for user in users:
+                if self.__with_userid:
+                    videos.extend(self.__view_seqs[user][1:])
+                else:
+                    videos.extend(self.__view_seqs[user])
+        else:
+            for user in users:
+                if self.__with_userid:
+                    videos.extend(self.__view_seqs[self.__user_index[user]][1:])
+                else:
+                    videos.extend(self.__view_seqs[self.__user_index[user]])
+        return videos
 
     def generate_users_embedding(self, videos_embedding, batch_size=None, view_seqs_index=None, is_rating=False):
         videos_embedding = np.array(videos_embedding)
@@ -159,6 +253,7 @@ class ViewTokenizer(object):
                                                view_seqs_tensor: view_seqs_input,
                                                videos_rating_tensor: rating})
                 users_embedding.extend(embedding[0])
+            sess.close()
         return users_embedding
 
     def get_index_user(self):

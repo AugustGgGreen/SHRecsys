@@ -2,14 +2,18 @@
 import os
 import tensorflow as tf
 import logging
-from tensorflow.contrib.factorization import KMeans
+
+from sklearn.cluster import KMeans
+from tensorflow.contrib.learn import KMeansClustering
+
 logging.getLogger().setLevel(logging.INFO)
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 class TFKMeansCluster(object):
-    def __init__(self, num_cluster, num_feature, num_iter):
+    def __init__(self, num_cluster, num_feature, num_iter, model_dir=None):
         self.__num_cluster=num_cluster
         self.__num_feature = num_feature
         self.__num_iter = num_iter
+        self.__model_dir = model_dir
         self.__create_placeholder()
         self.__build_kmeans_graph()
         pass
@@ -21,6 +25,7 @@ class TFKMeansCluster(object):
 
     def __build_kmeans_graph(self):
         with tf.name_scope("build_kmeans"):
+            '''
             self.kmeans = KMeans(inputs=self.input, num_clusters=self.__num_cluster, distance_metric='cosine', use_mini_batch=True)
             training_graph = self.kmeans.training_graph()
             if len(training_graph) > 6:
@@ -33,6 +38,10 @@ class TFKMeansCluster(object):
                  self.init_op, self.train_op) = training_graph
             self.cluster_idx = self.cluster_idx_[0]  # fix for cluster_idx being a tuple
             self.avg_distance = tf.reduce_mean(self.scores)
+            '''
+            self.kmeans = KMeansClustering(num_clusters=self.__num_cluster,  model_dir=self.__model_dir, \
+                                           initial_clusters=KMeansClustering.KMEANS_PLUS_PLUS_INIT)
+            self.kmeans.fit(input_fn=self.input, )
 
     def train(self,input):
         with tf.Session(config=tf.ConfigProto(
@@ -45,3 +54,6 @@ class TFKMeansCluster(object):
                 _, distance, idx = sess.run([self.train_op, self.avg_distance, self.cluster_idx], feed_dict={self.input:input})
                 if i % 10 == 0 or i == 1:
                     logging.info("epoch {}, average distance: {}".format(i, distance))
+
+    def predict(self):
+        pass

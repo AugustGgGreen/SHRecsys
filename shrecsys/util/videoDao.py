@@ -2,7 +2,7 @@ import logging
 import urllib.request as request
 from rediscluster import StrictRedisCluster
 import json
-class RedisDao:
+class VideoRedisDao:
     def __init__(self,AppID=10370):
         self.cluster = None
         self._connect_redis(AppID)
@@ -95,9 +95,63 @@ class RedisDao:
         logging.critical("get videos key words from redis success, videos size:{}".format(len(videos_key)))
         return videos_key
 
+class VideoHttpDao(object):
+
+    def __init__(self):
+        self.url_link = "http://api.tv.sohu.com/v4/video/info/%s.json?plat=1&api_key=695fe827ffeb7d74260a813025970bd5&site=%s"
+
+    def get_video_info(self, vid, site):
+        url = self.url_link % (vid, site)
+        httpResponse = request.urlopen(url)
+        content = json.loads(httpResponse.read().decode("utf-8"))
+        if content is None:
+            return None
+        else:
+            try:
+                return content["data"]
+            except Exception:
+                return None
+
+    def get_video_title(self, vid, site):
+        video_info = self.get_video_info(vid, site)
+        if video_info is None:
+            return None
+        else:
+            try:
+                return video_info["video_name"]
+            except Exception:
+                return None
+
+class VideoDao(object):
+    def __init__(self):
+        self.redisDao = VideoRedisDao()
+        self.httpDao = VideoHttpDao()
+
+    def get_videos_key_words(self, videos, weighted=False):
+        return self.redisDao.get_videos_key_words(videos, weighted)
+
+    def get_video_key_words(self, video_site):
+        video = video_site[0:len(video_site) - 1]
+        site = video_site[len(video_site) - 1]
+        return self.redisDao.get_video_key_words(video, site)
+
+    def mget_videos(self, videos):
+        return self.redisDao.mget_videos(videos)
+
+    def get_video_title(self, video_site):
+        video = video_site[0:len(video_site)-1]
+        site = video_site[len(video_site)-1]
+        return self.httpDao.get_video_title(video, site)
+
+    def get_video_info(self, video_site):
+        video = video_site[0:len(video_site) - 1]
+        site = video_site[len(video_site) - 1]
+        return self.httpDao.get_video_info(video, site)
 
 
 if __name__ == "__main__":
-    redis = RedisDao()
-    print(redis.mget_videos(["947529982", "999339382"]))
-    print(redis.get_video_key_words(94752998, 2))
+    redis = VideoDao()
+    redis_ = VideoRedisDao()
+    print(redis.get_videos_key_words(["947529982", "999339382"]))
+    print(redis.get_video_title("947529982"))
+    print(redis.get_video_key_words("947529982"))
