@@ -10,16 +10,16 @@ import time
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-from shrecsys.examples.topic2vec.topic2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, MODEL_PATH, \
+from shrecsys.examples.topic2vec.topic2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, \
     PREDICT_PATH
 from shrecsys.examples.word2vec.word2vec_example import TOP_K
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 fstool = FileSystemUtil()
 videoTokenzier = VideoTokenizer()
 videoTokenzier = fstool.load_obj(ROOT,"videoTokenzier")
-videoTokenzier.load_videos_topics(PREDICT_PATH, videos_topics)
+videoTokenzier.load_videos_topics(PREDICT_PATH, load_videos_topics)
 train_videos_size = videoTokenzier.get_videos_size()
 topics_size = videoTokenzier.get_topics_size()
 videoTokenzier.contain_videos_on_topics()
@@ -32,7 +32,7 @@ sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
                                         gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.25)))
 saver = tf.train.Saver()
-ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(MODEL_PATH, "checkpoints/checkpoint")))
+ckpt = tf.train.get_checkpoint_state(os.path.dirname(os.path.join(ROOT, "checkpoints/checkpoint")))
 if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 

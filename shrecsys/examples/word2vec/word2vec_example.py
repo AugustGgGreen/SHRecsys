@@ -2,7 +2,7 @@
 import sys
 
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
-from shrecsys.util.redisDao import RedisDao
+from shrecsys.util.videoDao import VideoDao
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
@@ -38,7 +38,7 @@ fstool = FileSystemUtil()
 def preprecessing(view_seqs):
     viewTokenizer = ViewTokenizer(view_seqs, min_cnt=MIN_CNT)
     videos = list(viewTokenizer.get_videos_index().keys())
-    redis = RedisDao()
+    redis = VideoDao()
     videos_keys = redis.get_videos_key_words(videos, weighted=True)
     corpus = Corpus()
     videos_topics = corpus.build_key_words_index(videos_keys)

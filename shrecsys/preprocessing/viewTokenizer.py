@@ -2,17 +2,18 @@
 import os
 import logging
 import numpy as np
+import operator
 import tensorflow as tf
 from collections import Counter
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 logging.getLogger().setLevel(logging.INFO)
 class ViewTokenizer(object):
-    def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0, max_rate=0.8):
+    def __init__(self, view_seqs, with_userid=False, video_index=None, min_cnt=0, filter_top=0):
         self.__with_userid = with_userid
         self.__view_seqs = view_seqs
         self.__videos_index = video_index
         self.__min_cnt = min_cnt
-        self.__max_rate = max_rate
+        self.__filter_top = filter_top
         self.__view_seqs_index = None
         self.__view_seqs_filter = view_seqs
         self.__view_seqs_topics = None
@@ -28,6 +29,10 @@ class ViewTokenizer(object):
                 self.__view_to_index_seqs()
 
     def __build_videos_index(self):
+        if self.__filter_top > 0:
+            sort_count = sorted(self.__video_count.items(), key=operator.itemgetter(1), reverse=True)
+            print(sort_count[:self.__filter_top])
+            filter_dict = dict(sort_count[:self.__filter_top])
         if self.__videos_index is None and self.__view_seqs is not None:
             self.__videos_index = dict()
             index = 0
@@ -36,7 +41,7 @@ class ViewTokenizer(object):
                     logging.info('build videos index in view, videos index:{}'.format(index))
                 index += 1
                 video_num = self.__video_count.get(video)
-                if video_num > self.__min_cnt and video_num / len(self.__view_seqs) <= self.__max_rate:
+                if video_num > self.__min_cnt and video not in filter_dict.keys():
                     self.__videos_index[video] = len(self.__videos_index) + 1
         logging.info('build videos index in view success, videos size:{}'.format(len(self.__videos_index)))
 
@@ -161,7 +166,7 @@ class ViewTokenizer(object):
         for i, value in enumerate(value_list):
             if value > 0:
                 videos_tfidf[index_videos[i]] = value
-        videos_sort = sorted(videos_tfidf.items(), key=np.operator.itemgetter(1))
+        videos_sort = sorted(videos_tfidf.items(), key=operator.itemgetter(1))
         res = []
         for i, video in enumerate(videos_sort):
             if i >= top_k:
