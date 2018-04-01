@@ -10,6 +10,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 fstool = FileSystemUtil()
 BATCHES_LEN = 20000
+
 def generate_batches(input, output, batch_size, context_size, store_path):
     center_batches = []
     target_batches = []

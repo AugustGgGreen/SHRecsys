@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
-from shrecsys.util.videoDao import VideoDao
+from shrecsys.Dao.videoDao import VideoDao
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 logging.getLogger().setLevel(logging.INFO)

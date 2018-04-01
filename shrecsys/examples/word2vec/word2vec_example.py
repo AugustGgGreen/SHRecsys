@@ -2,11 +2,11 @@
 import sys
 
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
-from shrecsys.util.videoDao import VideoDao
+from shrecsys.Dao.videoDao import VideoDao
 from shrecsys.models.models import Model
 from shrecsys.models.topic2vec.topic2vec import Topic2vec
 from shrecsys.preprocessing.corpus import Corpus
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer
 from shrecsys.preprocessing.viewTokenizer import ViewTokenizer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 TRAIN_ROOT = "../../../data/word2vec/data"

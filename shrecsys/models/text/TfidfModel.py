@@ -9,10 +9,10 @@ class TfidfModel(object):
         self.__index_words = None
 
     def calculate_Tfidf(self):
-        vectorizer = CountVectorizer()
+        vectorizer = CountVectorizer(min_df=0, token_pattern='\w+')
         cropus_x = vectorizer.fit_transform(self.__cropus)
         words = vectorizer.get_feature_names()
-        index = [i for i in range(words)]
+        index = [i for i in range(len(words))]
         tfidf_transformer = TfidfTransformer()
         words_index = dict(zip(words, index))
         index_words = dict(zip(index, words))

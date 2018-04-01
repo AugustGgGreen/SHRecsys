@@ -42,3 +42,4 @@ with tf.Session(config=tf.ConfigProto(
     rating = tf.SparseTensorValue(indices=user_batch[0],values=user_batch[2], dense_shape=(len(user_seqs),max_len))
     embeding = sess.run([user_embeding],feed_dict={video_embed:video_embedding, users_seq:view_seqs, videos_rating:rating})
     print(embeding)
+

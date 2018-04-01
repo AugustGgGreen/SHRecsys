@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
-from shrecsys.util.redisDao import RedisDao
+from shrecsys.Dao.videoDao import VideoDao
 from shrecsys.preprocessing.corpus import Corpus
 import logging
 import os
@@ -30,7 +30,7 @@ print(videoTokenzier.get_videos_topics())
 if CANDIDATE:
     corpus = fstool.load_obj(PREDICT_ROOT, "corpus")
     videos = []
-    redis = RedisDao()
+    redis = VideoDao()
     videos_keys = redis.get_videos_key_words(videos, weighted=True)
     videos_topics = corpus.build_key_words_index(videos_keys)
     videoTokenzier.set_videos_topics(videos_topics)

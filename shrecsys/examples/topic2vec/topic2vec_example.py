@@ -14,16 +14,17 @@ EMBED_SIZE = 30
 NUM_SAMPLED = 6
 CONTEXT_SIZE = 2
 LEARN_RATING = 1
+TOP_K = 100
 ITER = 1
 EPOCH = 5
 BATCH_SIZE = 30
-PREDICT_PATH = "../../../data/topic2vec/mvrsData.20180111"
+PREDICT_PATH = "../../../data/topic2vec/videos_topics"
 
 fstool = FileSystemUtil()
 def preprecessing(view_seqs):
     videoTokenzier = VideoTokenizer()
     videoTokenzier.load_videos_topics(VIDEO_TOPIC, load_videos_topics)
-    viewTokenizer = ViewTokenizer(view_seqs, min_cnt=5, filter_top=500)
+    viewTokenizer = ViewTokenizer(view_seqs, min_cnt=0, filter_top=0)
     viewTokenizer.videos_intersection(videoTokenzier.get_videos_index())
     videoTokenzier.videos_intersection(viewTokenizer.get_videos_index())
     viewTokenizer.view_to_index_topics_seqs(videoTokenzier.get_videos_topics_index())
@@ -42,3 +43,5 @@ if __name__=="__main__":
     model.fit(viewTokenzier.get_view_topics_index(), viewTokenzier.get_view_index())
     fstool.save_obj(videoTokenzier, ROOT, "videoTokenzier")
     fstool.save_obj(viewTokenzier, ROOT, "viewTokenzier")
+    fstool.save_obj(videoTokenzier.get_topics_index(), ROOT, "topics_index")
+    fstool.save_obj(videoTokenzier.get_videos_topics(), ROOT, "videos_topics")

@@ -12,21 +12,19 @@ import tensorflow as tf
 from flask import Flask, jsonify
 from shrecsys.examples.topic2vec.topic2vec_example import ROOT, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, \
     PREDICT_PATH
-from shrecsys.examples.word2vec.word2vec_example import TOP_K
+from shrecsys.examples.topic2vec.topic2vec_example import TOP_K
 from shrecsys.models.topic2vec.topic2vecModel import Topic2vecModel
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics
+from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, load_videos_topics, generate_videos_embedding
 from shrecsys.util.fileSystemUtil import FileSystemUtil
+os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 fstool = FileSystemUtil()
 videoTokenzier = VideoTokenizer()
-videoTokenzier = fstool.load_obj(ROOT,"videoTokenzier")
+videoTokenzier = fstool.load_obj(ROOT, "videoTokenzier")
 videoTokenzier.load_videos_topics(PREDICT_PATH, load_videos_topics)
 train_videos_size = videoTokenzier.get_videos_size()
 topics_size = videoTokenzier.get_topics_size()
-videoTokenzier.contain_videos_on_topics()
-videoTokenzier.clear("videos_topics")
 topic2vec = Topic2vecModel(topics_size + 1, train_videos_size + 1, EMBED_SIZE, NUM_SAMPLED, LEARN_RATING, TOP_K)
 predict = videoTokenzier.get_videos_index()
-index_predict = dict(zip(predict.values(), predict.keys()))
 topic2vec.build_graph()
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
@@ -37,14 +35,10 @@ if ckpt and ckpt.model_checkpoint_path:
     saver.restore(sess, ckpt.model_checkpoint_path)
 
 logging.critical("tf model init successfully!")
-predict_sparse = videoTokenzier.videos_topics_index_to_sparse()
-videos_topics = tf.SparseTensorValue(indices=predict_sparse[0], \
-                                                values=predict_sparse[1], dense_shape=(len(index_predict),50000))
-topics_weight = tf.SparseTensorValue(indices=predict_sparse[0], \
-                                                values=predict_sparse[2], dense_shape=(len(index_predict),50000))
-feed = {topic2vec.predict_videos_topics:videos_topics, \
-        topic2vec.predict_topics_weight:topics_weight}
-videos_embedding = sess.run([topic2vec.videos_embedding], feed_dict=feed)
+topics_embed = sess.run([topic2vec.topics_embedding])
+videos_embedding, index_predict = generate_videos_embedding(videos_topics=videoTokenzier.get_videos_topics(), \
+                                                            topics_embedding=topics_embed[0],
+                                                            topics_index=videoTokenzier.get_topics_index())
 logging.critical("create topic successful")
 app = Flask(__name__)
 
