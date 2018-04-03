@@ -1,9 +1,10 @@
 # -*- coding:utf-8 -*-
-
+import codecs
 import os
 import logging
 import tensorflow as tf
 
+from shrecsys.Dao.videoDao import VideoDao
 from shrecsys.models.Kmeans.userKMeans import UserKMeans
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer
@@ -13,6 +14,8 @@ from shrecsys.examples.topic2vec.topic2vec_example import EMBED_SIZE, NUM_SAMPLE
 logging.getLogger().setLevel(logging.INFO)
 KROOT='../../../data/Kmeans'
 VIEW_SEQS = KROOT + '/view_seqs'
+
+TOP_K = 10
 def get_topics_embedding(videoTokenzier):
     train_videos_size = videoTokenzier.get_videos_size()
     topics_size = videoTokenzier.get_topics_size()
@@ -33,12 +36,24 @@ def get_topics_embedding(videoTokenzier):
 
 if __name__ == "__main__":
     input_view = open(VIEW_SEQS)
+    top_k_output = codecs.open("../../../data/Kmeans" + "/top_k.txt", "w", "utf-8")
     fstool = FileSystemUtil()
     videotokenizer = VideoTokenizer()
     view_seqs = [line.strip().split() for line in input_view.readlines()]
-    videotokenizer = fstool.load_obj("../../../data/topic2vec", "videoTokenzier")
-    #topics_index = fstool.load_obj("../../../data/topic2vec", "topics_index")
-    #videos_topics = fstool.load_obj("../../../data/topic2vec", "videos_topics")
+    videotokenizer = fstool.load_obj("../../../data/Kmeans", "videoTokenzier")
     topics_embedding = get_topics_embedding(videotokenizer)
     model = UserKMeans(10, videotokenizer, topics_embedding[0])
     model.fit(view_seqs)
+    videoDao = VideoDao()
+    print(model.predict(model.train_users_embedding))
+    cluster_videos = model.clusters_videos_list()
+    cluster_top_k = model.get_top_k(cluster_videos, TOP_K)
+    for cluster in cluster_top_k:
+        videos_list = cluster_top_k.get(cluster)
+        top_k_output.write("cluster id: {}, top : {}".format(cluster, videos_list) + '\n')
+        for video in videos_list:
+            video_site = video[0]
+            print(video_site)
+            title = videoDao.get_video_title(video_site)
+            top_k_output.write(str(title) + "\n")
+

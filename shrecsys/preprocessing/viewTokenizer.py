@@ -124,19 +124,6 @@ class ViewTokenizer(object):
 
 
     """
-    def clusters_users_seqs(self, clusters_user, index=True, unique=True):
-        '''
-        给出用户的聚类结果，返回每个类簇中包含的视频列表
-        :param clusters_user:
-        :return:
-        '''
-        clusters_videos= []
-        for cluster_user in clusters_user:
-            if unique:
-                clusters_videos.append(set(self.get_cluster_videos(cluster_user, index=index)))
-            else:
-                clusters_videos.append(self.get_cluster_videos(cluster_user, index=index))
-        return clusters_videos
         
     def get_cluster_videos(self, users, index=True):
         '''

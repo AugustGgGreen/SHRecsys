@@ -66,9 +66,12 @@ class UserTokenizer(object):
         tfidf = model.get_Tfidf()
         input = []
         for index, view_seq in enumerate(view_seqs):
+            if index % 1000 == 0:
+                logging.info("generate the input of the embedding algorthim, index: {}".format(index))
             weights = []
             for video in view_seq:
-                weights.append(tfidf[index,word_index[video]])
+                row = tfidf.getrow(index).todense()
+                weights.append(row[0, word_index[video]])
             input.append([view_seq, weights])
         return input
 
@@ -77,12 +80,10 @@ class UserTokenizer(object):
         self.__index_embed = self.__index_users
         self.__embed_index = self.__users_index
         self.pop_embed_index(del_seqs)
-        logging.info("generate the inputs of the embedding algorithm")
         inputs = self.generate_user_tfidf(view_seqs_index)
-        logging.info("generate the users videos TF-IDF success!")
         tensorUtil = TensorUtil()
         users_embed = tensorUtil.generate_items_embedding(features_embedding=videos_embedding, \
-                                                               items_feature=inputs, is_rating=True)
+                                                               items_feature=inputs, is_rating=True, batch_size=1000)
         return users_embed, self.__embed_index
 
     def get_uesr_index(self):
@@ -96,8 +97,7 @@ if __name__=="__main__":
                  ['rte', 'videos2', 'videos5', 'videos6', 'videos4'],
                  ['dcg', 'videos4', 'videos1', 'videos2', 'videos1'],
                  ['ktv', 'videos3', 'videos4', 'videos4', 'videos6']]
-    videos_index = {'videos1':1, 'videos3':3, 'videos4':4, 'videos2':2,
-                    'videos5':5, 'videos6':6}
+    videos_index = {'videos1':1, 'videos3':3, 'videos4':4, 'videos2':2, 'videos5':5, 'videos6':6}
     videos_embedding = [
         [0,1,2,3,4],
         [2,3,4,2,3],
@@ -111,7 +111,6 @@ if __name__=="__main__":
     ]
     userTokenizer = UserTokenizer(with_userid=True)
     userTokenizer.build_tokenizer(view_seqs)
-
     #userTokenizer.generate_user_tfidf(view_seqs)
     print(userTokenizer.generate_user_embedding(userTokenizer.view_seqs, videos_embedding=videos_embedding, video_index=videos_index))
     userTokenizer.build_tokenizer(view_seqs)

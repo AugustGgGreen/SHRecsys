@@ -21,7 +21,7 @@ class TfidfModel(object):
         self.__Tfidf=tfidf_transformer.fit_transform(cropus_x)
 
     def get_Tfidf(self):
-        return self.__Tfidf.todense()
+        return self.__Tfidf
 
     def get_words_index(self):
         return self.__words_index

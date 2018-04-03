@@ -1,6 +1,5 @@
 #-*-coding:utf-8-*-
 import sys
-
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 import matplotlib
 matplotlib.use('Agg')
@@ -102,7 +101,6 @@ if __name__=="__main__":
     clusters_top_tfidf_videos = viewTokenizer.cluster_top_k_tfidf(clusters_videos, TOP_K)
     clusters_top_tfidf_videos_mul = viewTokenizer.cluster_top_k_tfidf_test(clusters_videos, clusters_videos_unique, TOP_K)
     for i in range(CLUSTER_NUM):
-        '''
         top_k = clusters_top_videos[i]
         top_k_output.write("cluster id: {}, top : {}".format(i, top_k) + '\n')
         for video in top_k:
@@ -121,7 +119,6 @@ if __name__=="__main__":
             video_site = video[0]
             title = videoDao.get_video_title(video_site)
             top_k_output.write(str(title) + "\n")
-        '''
         top_k_tfidf_unique_mul = clusters_top_tfidf_videos_mul[i]
         top_k_output.write("cluster id: {}, top unique tfidf mul {}: {}".format(i, TOP_K, top_k_tfidf_unique_mul) + '\n')
         for video in top_k_tfidf_unique_mul:

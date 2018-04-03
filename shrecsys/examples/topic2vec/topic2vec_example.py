@@ -10,7 +10,7 @@ from shrecsys.util.fileSystemUtil import FileSystemUtil
 ROOT = "../../../data/topic2vec"
 VIDEO_TOPIC = ROOT + "/train_videos"
 VIEW_SEQS = ROOT + "/view_test"
-EMBED_SIZE = 30
+EMBED_SIZE = 300
 NUM_SAMPLED = 6
 CONTEXT_SIZE = 2
 LEARN_RATING = 1

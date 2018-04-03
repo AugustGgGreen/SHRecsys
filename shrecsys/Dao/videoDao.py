@@ -124,9 +124,9 @@ class VideoHttpDao(object):
 
 class VideoDao(object):
     def __init__(self):
-        self.redisDao = VideoRedisDao()
+        #self.redisDao = VideoRedisDao()
         self.httpDao = VideoHttpDao()
-
+    '''
     def get_videos_key_words(self, videos, weighted=False):
         return self.redisDao.get_videos_key_words(videos, weighted)
 
@@ -137,6 +137,7 @@ class VideoDao(object):
 
     def mget_videos(self, videos):
         return self.redisDao.mget_videos(videos)
+    '''
 
     def get_video_title(self, video_site):
         video = video_site[0:len(video_site)-1]
