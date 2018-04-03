@@ -3,7 +3,8 @@ import sys
 import argparse
 import logging
 
-sys.path.append("/data/app/xuezhengyin/app/shrecsys")
+sys.path.append("/data/app/xuezhengyin/test/shrecsys")
+sys.path.append("/data/app/xuezhengyin/test/shrecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans
@@ -96,6 +97,7 @@ def train(args, videos_embedding, videos_index, view_seqs):
     if args.upath:
         fstool.save_obj(users_embedding, args.upath, "users_embedding")
         fstool.save_obj(users_index, args.upath, "users_index")
+        logging.info("save the users embedding and user index, store path: {}".format(args.upath))
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
 
