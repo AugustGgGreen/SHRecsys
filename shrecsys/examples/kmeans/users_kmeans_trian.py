@@ -3,13 +3,14 @@ import sys
 import argparse
 import logging
 
-from shrecsys.models.Kmeans.userKMeans import UserKMeans
-
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
+from shrecsys.models.Kmeans.userKMeans import UserKMeans
+from shrecsys.util.fileSystemUtil import FileSystemUtil
 
 logging.getLogger().setLevel(logging.INFO)
+fstool = FileSystemUtil()
 def build_argparse():
     parse = argparse.ArgumentParser(prog="Users-KMeans")
     parse.add_argument("cnumber",
@@ -50,6 +51,14 @@ def build_argparse():
                        help="the work process of the KMeans",
                        default=15,
                        type=str)
+    parse.add_argument("--upath",
+                       help="the path store the users embedding",
+                       default=None,
+                       type=str)
+    parse.add_argument("--ubatch_size",
+                       help="the users batch size while generate the users embedding",
+                       default=1000,
+                       type=int)
     return parse
 
 def load_view_seqs(args):
@@ -83,7 +92,10 @@ def train(args, videos_embedding, videos_index, view_seqs):
     users_embedding, users_index = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                           mode=args.uembed,
                                           videos_embedding=videos_embedding,
-                                          videos_index=videos_index)
+                                          videos_index=videos_index,batch_size=args.ubatch_size)
+    if args.upath:
+        fstool.save_obj(users_embedding, args.upath, "users_embedding")
+        fstool.save_obj(users_index, args.upath, "users_index")
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
 

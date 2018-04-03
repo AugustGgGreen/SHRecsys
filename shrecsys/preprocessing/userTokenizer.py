@@ -78,7 +78,7 @@ class UserTokenizer(object):
     def generate_user_average(self, view_seqs_index):
         pass
 
-    def generate_user_embedding(self, view_seqs, mode, videos_embedding=None, videos_index=None):
+    def generate_user_embedding(self, view_seqs, mode, videos_embedding=None, videos_index=None, batch_size=None):
         view_seqs_index, _, del_seqs = view_seqs_to_index(view_seqs, videos_index)
         self.__index_embed = self.__index_users
         self.__embed_index = self.__users_index
@@ -90,7 +90,7 @@ class UserTokenizer(object):
             inputs = self.generate_user_average(view_seqs_index)
         tensorUtil = TensorUtil()
         users_embed = tensorUtil.generate_items_embedding(features_embedding=videos_embedding, \
-                                                               items_feature=inputs, is_rating=True, batch_size=1000)
+                                                               items_feature=inputs, is_rating=True, batch_size=batch_size)
         return users_embed, self.__embed_index
 
     def get_uesr_index(self):
