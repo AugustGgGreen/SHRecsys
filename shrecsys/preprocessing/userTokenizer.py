@@ -75,12 +75,19 @@ class UserTokenizer(object):
             input.append([view_seq, weights])
         return input
 
-    def generate_user_embedding(self, view_seqs, videos_embedding=None, video_index=None):
-        view_seqs_index, _, del_seqs = view_seqs_to_index(view_seqs, video_index)
+    def generate_user_average(self, view_seqs_index):
+        pass
+
+    def generate_user_embedding(self, view_seqs, mode, videos_embedding=None, videos_index=None):
+        view_seqs_index, _, del_seqs = view_seqs_to_index(view_seqs, videos_index)
         self.__index_embed = self.__index_users
         self.__embed_index = self.__users_index
         self.pop_embed_index(del_seqs)
-        inputs = self.generate_user_tfidf(view_seqs_index)
+        inputs = []
+        if mode == "tf-idf":
+            inputs = self.generate_user_tfidf(view_seqs_index)
+        elif mode == "average":
+            inputs = self.generate_user_average(view_seqs_index)
         tensorUtil = TensorUtil()
         users_embed = tensorUtil.generate_items_embedding(features_embedding=videos_embedding, \
                                                                items_feature=inputs, is_rating=True, batch_size=1000)

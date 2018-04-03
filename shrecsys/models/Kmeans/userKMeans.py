@@ -13,40 +13,29 @@ from shrecsys.util.fileSystemUtil import FileSystemUtil
 
 
 class UserKMeans(object):
-    def __init__(self, num_cluster, videotokenizer, topics_embedding):
-        self.num_cluster = num_cluster
-        self.videotokenizer = videotokenizer
-        self.topics_embedding = topics_embedding
+    def __init__(self):
+        pass
 
-    def fit(self, view_seqs):
-        videos_embeding, videos_index = generate_videos_embedding(videos_topics=self.videotokenizer.get_videos_topics(),
-                                                    topics_embedding=self.topics_embedding,
-                                                    topics_index=self.videotokenizer.get_topics_index(),
-                                                    videos_index_exit=self.videotokenizer.get_videos_index())
-        self.userTokenizer = UserTokenizer(view_seqs)
-        users_embedding, users_index = \
-            self.userTokenizer.generate_user_embedding(view_seqs=self.userTokenizer.view_seqs,
-                                                       videos_embedding=videos_embeding,
-                                                       video_index=videos_index)
-        self.train_users_embedding = users_embedding
-        self.kmeans = KMeans(n_clusters=self.num_cluster, n_jobs=10, random_state=0, verbose=1).fit(users_embedding)
+    def fit(self, cluster_num, n_jobs, users_embedding):
+        self.kmeans = KMeans(n_clusters=cluster_num, n_jobs=n_jobs, random_state=0, verbose=1).fit(users_embedding)
+
+    def generate_cluster(self, users_embedding, index_embed, users_index, view_seqs):
+        cluster_res = self.kmeans.predict(users_embedding)
+        self.cluster_users = dict()
+        self.cluster_users_index = dict()
+        self.cluster_videos = dict()
+        for index, cluster_id in enumerate(cluster_res):
+            if cluster_id in self.cluster_users.keys():
+                uid = index_embed[index]
+                self.cluster_users[cluster_id].append(uid)
+                self.cluster_videos[cluster_id].extend(users_index[uid])
+            else:
+                uid = index_embed[index]
+                self.cluster_users[cluster_id] = [uid]
+                self.cluster_videos[cluster_id] = view_seqs[users_index[uid]]
 
     def predict(self, videos_embedding):
         return self.kmeans.predict(videos_embedding)
-
-    def clusters_users_seqs(self, clusters_user, index=True, unique=True):
-        '''
-        给出用户的聚类结果，返回每个类簇中包含的视频列表
-        :param clusters_user:
-        :return:
-        '''
-        clusters_videos = []
-        for cluster_user in clusters_user:
-            if unique:
-                clusters_videos.append(set(self.get_cluster_videos(cluster_user, index=index)))
-            else:
-                clusters_videos.append(self.get_cluster_videos(cluster_user, index=index))
-        return clusters_videos
 
     def clusters_videos_list(self):
         cluster_videos = dict()
