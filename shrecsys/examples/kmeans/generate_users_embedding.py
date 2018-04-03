@@ -16,8 +16,9 @@ def generate_users_embedding(videos_embedding, videos_index, view_seqs):
     userTokenizer = UserTokenizer(view_seqs)
     print(np.array(videos_embedding).shape)
     users_embedding, users_index = userTokenizer.generate_user_embedding(view_seqs=userTokenizer.view_seqs,
-                                                   videos_embedding=videos_embedding,
-                                                   video_index=videos_index)
+                                                                         videos_embedding=videos_embedding,
+                                                                         mode="tf-idf",
+                                                                         videos_index=videos_index)
     return users_embedding, users_index, userTokenizer.view_seqs
 if __name__ == "__main__":
     if len(sys.argv) != 2:
