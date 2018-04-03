@@ -19,7 +19,7 @@ class UserKMeans(object):
     def fit(self, cluster_num, n_jobs, users_embedding):
         self.kmeans = KMeans(n_clusters=cluster_num, n_jobs=n_jobs, random_state=0, verbose=1).fit(users_embedding)
 
-    def generate_cluster(self, users_embedding, index_embed, users_index, view_seqs):
+    def generate_clusters(self, users_embedding, index_embed, users_index, view_seqs):
         cluster_res = self.kmeans.predict(users_embedding)
         self.cluster_users = dict()
         self.cluster_users_index = dict()
@@ -28,7 +28,7 @@ class UserKMeans(object):
             if cluster_id in self.cluster_users.keys():
                 uid = index_embed[index]
                 self.cluster_users[cluster_id].append(uid)
-                self.cluster_videos[cluster_id].extend(users_index[uid])
+                self.cluster_videos[cluster_id].extend(view_seqs[users_index[uid]])
             else:
                 uid = index_embed[index]
                 self.cluster_users[cluster_id] = [uid]
