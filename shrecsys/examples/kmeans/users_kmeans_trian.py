@@ -63,7 +63,7 @@ def build_argparse():
                        help="the path of the model store",
                        default=None,
                        type=str)
-    parse.add_argument("--uembed_load",
+    parse.add_argument("--uembed_path",
                        help="if load the users embedding",
                        default=None,
                        type=str)
