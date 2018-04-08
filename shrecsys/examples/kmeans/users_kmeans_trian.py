@@ -4,10 +4,9 @@ import argparse
 import logging
 
 sys.path.append("/data/app/xuezhengyin/test/shrecsys")
-sys.path.append("/data/app/xuezhengyin/test/shrecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
-from shrecsys.models.Kmeans.userKMeans import UserKMeans
+from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 
 logging.getLogger().setLevel(logging.INFO)
@@ -60,6 +59,14 @@ def build_argparse():
                        help="the users batch size while generate the users embedding",
                        default=1000,
                        type=int)
+    parse.add_argument("--mpath",
+                       help="the path of the model store",
+                       default=None,
+                       type=str)
+    parse.add_argument("--uembed_load",
+                       help="if load the users embedding",
+                       default=None,
+                       type=str)
     return parse
 
 def load_view_seqs(args):
@@ -90,16 +97,25 @@ def build_videos_embedding(args):
 
 def train(args, videos_embedding, videos_index, view_seqs):
     userTokenizer = UserTokenizer(view_seqs)
-    users_embedding, users_index = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
-                                          mode=args.uembed,
-                                          videos_embedding=videos_embedding,
-                                          videos_index=videos_index,batch_size=args.ubatch_size)
+    if args.uembed_load:
+        users_embedding = fstool.load_obj(args.uembed_load, "users_embedding")
+        users_index = fstool.load_obj(args.uembed_load, "users_index")
+    else:
+        users_embedding, users_index = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
+                                              mode=args.uembed,
+                                              videos_embedding=videos_embedding,
+                                              videos_index=videos_index,batch_size=args.ubatch_size)
     if args.upath:
         fstool.save_obj(users_embedding, args.upath, "users_embedding")
         fstool.save_obj(users_index, args.upath, "users_index")
         logging.info("save the users embedding and user index, store path: {}".format(args.upath))
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
+    cluster_centers = userKMeans.get_cluster_centers()
+    clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding)
+    clusters_videos_val = calculate_value(cluster_centers)
+    fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
+    fstool.save_obj(cluster_centers, args.mpath, "cluster_videos")
 
 if __name__=="__main__":
     parse = build_argparse()

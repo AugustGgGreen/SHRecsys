@@ -11,6 +11,14 @@ from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, generate_videos_embedding
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 
+def calculate_value(cluster_videos, mode="TF-IDF"):
+    if isinstance(cluster_videos, dict):
+        if mode == "TF-IDF":
+            pass
+        elif mode == "frequency":
+            pass
+    else:
+        raise TypeError("the cluster_video must be dict")
 
 class UserKMeans(object):
     def __init__(self):
@@ -34,17 +42,17 @@ class UserKMeans(object):
                 self.cluster_users[cluster_id] = [uid]
                 self.cluster_videos[cluster_id] = view_seqs[users_index[uid]]
 
-    def predict(self, videos_embedding):
-        return self.kmeans.predict(videos_embedding)
+    def predict(self, users_embedding):
+        return self.kmeans.predict(users_embedding)
 
-    def clusters_videos_list(self):
+    def clusters_videos_list(self, view_seqs, users_embedding):
         cluster_videos = dict()
-        x = self.predict(self.train_users_embedding)
+        x = self.predict(users_embedding)
         for index, cluster in enumerate(x):
             if cluster_videos.get(cluster) is None:
-                cluster_videos[cluster] = self.userTokenizer.view_seqs[index]
+                cluster_videos[cluster] = view_seqs[index]
             else:
-                cluster_videos[cluster].extend(self.userTokenizer.view_seqs[index])
+                cluster_videos[cluster].extend(view_seqs[index])
         return cluster_videos
 
     def get_top_k(self, clusters_videos_list, TOP_K=100, strategy="frequency"):
@@ -58,6 +66,8 @@ class UserKMeans(object):
                 counter.clear()
         return cluster_top_k
 
+    def get_cluster_centers(self):
+        return self.kmeans.cluster_centers_
 
 
 

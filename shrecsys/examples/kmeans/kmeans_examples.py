@@ -3,10 +3,18 @@ import codecs
 import collections
 import logging
 import sys
+
+from pandas import Series
+from sklearn.manifold import TSNE
+
 sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from sklearn.cluster import KMeans
 from shrecsys.Dao.videoDao import VideoDao
 from shrecsys.util.fileSystemUtil import FileSystemUtil
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import pandas as pd
 
 logging.getLogger().setLevel(logging.INFO)
 KROOT='../../../data/Kmeans'
@@ -52,20 +60,57 @@ if __name__ == "__main__":
     videos_index = fstool.load_obj(KROOT, "videos_index")
     kmeans = KMeans(n_clusters=NUM_CLUSTER, n_jobs=10, random_state=0, verbose=1).fit(users_embedding)
     cluster_videos = clusters_videos_list(kmeans, view_seqs, videos_index)
-    cluster_top_k = get_top_k(cluster_videos, 10)
+    cluster_top_k = get_top_k(cluster_videos, TOP_K)
     top_k_output = codecs.open(KROOT + "/top_k.txt", "w", "utf-8")
+    centerid = kmeans.cluster_centers_
+    y_pred = kmeans.predict(users_embedding)
+    print(y_pred)
+    X_embedded = TSNE(n_components=2, verbose=2).fit_transform(centerid)
+    marker_list = '.,v^<>1234sp*hH+xDd|_'
+    color_list = ['aliceblue', 'antiquewhite', 'aqua', 'aquamarine', 'azure', 'beige', 'bisque', 'black', \
+                  'blanchedalmond', 'blue','blueviolet', 'brown', 'burlywood', 'cadetblue', 'chartreuse', \
+                  'chocolate', 'coral', 'cornflowerblue', 'cornsilk', 'crimson', 'cyan', 'darkblue', 'darkcyan',\
+                  'darkgoldenrod', 'darkgray', 'darkgreen', 'darkkhaki', 'darkmagenta', 'darkolivegreen', \
+                  'darkorange', 'darkorchid', 'darkred', 'darksalmon', 'darkseagreen', 'darkslateblue', 'darkslategray', \
+                  'darkturquoise', 'darkviolet', 'deeppink', 'deepskyblue', 'dimgray', 'dodgerblue', 'firebrick', \
+                  'floralwhite', 'forestgreen', 'fuchsia', 'gainsboro', 'ghostwhite', 'gold', 'goldenrod', 'gray',
+                  'green', 'greenyellow', 'honeydew', 'hotpink', 'indianred', 'indigo', 'ivory', 'khaki', 'lavender', \
+                  'lavenderblush', 'lawngreen', 'lemonchiffon', 'lightblue', 'lightcoral', 'lightcyan', 'lightgoldenrodyellow', 'lightgreen', 'lightgray', 'lightpink', 'lightsalmon', 'lightseagreen',
+                  'lightskyblue', 'lightslategray', 'lightsteelblue', 'lightyellow', 'lime', 'limegreen', 'linen', \
+                  'magenta', 'maroon', 'mediumaquamarine',
+                  'mediumblue', 'mediumorchid', 'mediumpurple', 'mediumseagreen', 'mediumslateblue',
+                  'mediumspringgreen', 'mediumturquoise', \
+                  'mediumvioletred', 'midnightblue', 'mintcream', 'mistyrose', 'moccasin', 'navajowhite', 'navy',
+                  'oldlace', 'olive', 'olivedrab', \
+                  'orange', 'orangered', 'orchid', 'palegoldenrod', 'palegreen', 'paleturquoise', 'palevioletred',
+                  'papayawhip', 'peachpuff', 'peru', \
+                  'pink', 'plum', 'powderblue', 'purple', 'red', 'rosybrown', 'royalblue', 'saddlebrown', 'salmon',
+                  'sandybrown', 'seagreen', 'seashell', \
+                  'sienna', 'silver', 'skyblue', 'slateblue', 'slategray', 'snow', 'springgreen', 'steelblue', 'tan',
+                  'teal', 'thistle', 'tomato', \
+                  'turquoise', 'violet', 'wheat', 'white', 'whitesmoke', 'yellow', 'yellowgreen']
+    logging.info("Train the KMeans Cluster Success! Plot the figure of the clusters")
+    index = 0
+    fig1 = plt.figure()
+    fig2 = plt.figure()
+    fig1.set_size_inches(w=30, h=13)
+    fig2.set_size_inches(w=30, h=13)
+    obj = Series(y_pred)
+    point_count = pd.value_counts(obj, sort=True)
+    max_count = max(point_count)
+    min_count = min(point_count)
+    max_rate = -1
+    min_rate = 1
     for i in cluster_top_k:
         ires = []
         for video in cluster_top_k.get(i):
-            ires.append(video[1])
+            ires.append(video[0])
         for j in cluster_top_k:
-            jres = ires
-            if i != j:
-                for video in cluster_top_k.get(j):
-                    jres.append(video[1])
-                rate = len(set(jres)) / 20
+            jres = []
+            for video in cluster_top_k.get(j):
+                jres.append(video[0])
+                rate = len(set(ires).intersection(set(jres))) / TOP_K
                 top_k_output.write("{} -> {} : {}\n".format(i,j,rate))
-            jres.clear()
     for cluster in cluster_top_k:
         videos_list = cluster_top_k.get(cluster)
         top_k_output.write("cluster id: {}, top : {}".format(cluster, videos_list) + '\n')
@@ -73,3 +118,19 @@ if __name__ == "__main__":
             video_site = video[0]
             title = videoDao.get_video_title(video_site)
             top_k_output.write(str(title) + "\n")
+    fig1.suptitle("clusters number: {},max_rate: {} max_rate: {}".format(NUM_CLUSTER, max_count, min_count), size="15")
+    fig2.suptitle("clusters number: {},max_count: {}, min_count: {}".format(NUM_CLUSTER, max_rate, min_rate), size="15")
+    fig1_test= fig1.add_subplot(1, 1, 1)
+    fig2_test = fig2.add_subplot(1, 1, 1)
+    for i in range(len(X_embedded)):
+        if index % 10000 == 0:
+            logging.info("plot the user index: {}".format(index))
+        index += 1
+        if y_pred[i] < 3080:
+            marker_index = int(y_pred[i] / 140)
+            color_index = y_pred[i] % 140
+            fig1_test.plot(X_embedded[i][0], X_embedded[i][1], marker=marker_list[marker_index],
+                      color=color_list[color_index], markersize=15)
+    fig2_test.hist(y_pred, NUM_CLUSTER)
+    fig1.savefig(KROOT + "/Cluster.png")
+    fig2.savefig(KROOT + "/hist.png")

@@ -7,7 +7,6 @@ from shrecsys.preprocessing.viewTokenizer import view_seqs_to_index
 from shrecsys.util.tensorUtil import TensorUtil
 logging.getLogger().setLevel(logging.INFO)
 
-
 class UserTokenizer(object):
     def __init__(self, view_seqs=None, users_index=None, index_users=None, with_userid=True):
         self.__users_index = users_index
