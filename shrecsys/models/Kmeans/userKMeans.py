@@ -10,11 +10,12 @@ import collections
 from collections import Counter
 
 def calculate_value(cluster_videos, mode="TF-IDF"):
+    cluster_videos_val = dict()
     if isinstance(cluster_videos, dict):
         if mode == "TF-IDF":
-            pass
+            for cluster in cluster_videos:
+                pass
         elif mode == "frequency":
-            cluster_videos_val = dict()
             for cluster in cluster_videos.keys():
                 videos = cluster_videos.get(cluster)
                 counter = Counter()
@@ -23,8 +24,6 @@ def calculate_value(cluster_videos, mode="TF-IDF"):
                 for video in counter.items():
                     video_val[video[0]] = video[1] / len(videos)
                 cluster_videos_val[cluster] = video_val
-            print(cluster_videos_val)
-
 
     else:
         raise TypeError("the cluster_video must be dict")

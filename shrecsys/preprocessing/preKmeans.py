@@ -3,7 +3,7 @@ import logging
 
 logging.getLogger().setLevel(logging.INFO)
 
-def load_sen2vec_embedding(SEN2VEC):
+def load_sen2vec_embedding(SEN2VEC, view_videos_index):
     input = open(SEN2VEC, "r")
     line = input.readline().strip()
     videos_index = dict()
@@ -12,10 +12,11 @@ def load_sen2vec_embedding(SEN2VEC):
     while line:
         points = line.split(' ')
         id = points[0]
-        videos_index[id] = index
-        embedding = points[1:]
-        videos_embedding.append(embedding)
-        index += 1
+        if id in view_videos_index.keys():
+            videos_index[id] = index
+            embedding = points[1:]
+            videos_embedding.append(embedding)
+            index += 1
         line = input.readline().strip()
         if index % 100000 == 0:
             logging.info("build sen2vec embedding, index: {}".format(index))

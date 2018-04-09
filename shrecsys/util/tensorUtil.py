@@ -50,7 +50,7 @@ class TensorUtil(object):
                                                items_feature_tensor: items_features_input,
                                                feature_rating_tensor: rating})
                 items_embedding.extend(embedding[0])
-                if index % 1000 == 0:
+                if index % 10 == 0:
                     logging.info("building items embedding, index: {}/{}".format(index, len(items_batches)))
             sess.close()
         logging.info("generate embedding success! embedding size: {}".format(len(items_embedding)))

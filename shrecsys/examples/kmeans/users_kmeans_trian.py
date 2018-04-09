@@ -85,7 +85,7 @@ def load_view_seqs(args):
         view_seqs = [line.strip().split() for line in input.readlines()]
         return view_seqs
 
-def build_videos_embedding(args):
+def build_videos_embedding(args, seqs_video_index):
     videos_embedding = None
     videos_index = None
 
@@ -94,7 +94,7 @@ def build_videos_embedding(args):
             if args.vvec is None:
                 raise ValueError("the parameter of the videos embedding path is None")
             else:
-                videos_embedding, videos_index = load_sen2vec_embedding(args.vvec)
+                videos_embedding, videos_index = load_sen2vec_embedding(args.vvec, seqs_video_index)
 
         elif args.vembed == "topic2vec":
             if args.tvec is None:
@@ -146,10 +146,19 @@ def train(users_embedding, users_index, index_embed):
     #fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
     #fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
 
+def build_videos_index(view_seqs):
+    seqs_video_index = dict()
+    for seq in view_seqs:
+        for video in seq:
+            if video not in seqs_video_index.keys():
+                seqs_video_index[video] = len(seqs_video_index)
+    return seqs_video_index
+
 if __name__=="__main__":
     parse = build_argparse()
     args = parse.parse_args()
-    videos_embedding, videos_index = build_videos_embedding(args)
     view_seqs = load_view_seqs(args)
+    seqs_video_index = build_videos_index(view_seqs)
+    videos_embedding, videos_index = build_videos_embedding(args, seqs_video_index)
     users_embedding, users_index, index_embed = build_users_embedding(args, videos_embedding, videos_index, view_seqs)
     train(users_embedding, users_index, index_embed)
