@@ -151,4 +151,5 @@ if __name__=="__main__":
     args = parse.parse_args()
     videos_embedding, videos_index = build_videos_embedding(args)
     view_seqs = load_view_seqs(args)
-    train(args, videos_embedding, videos_index, view_seqs)
+    users_embedding, users_index, index_embed = build_users_embedding(args, videos_embedding, videos_index, view_seqs)
+    train(users_embedding, users_index, index_embed)
