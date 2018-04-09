@@ -57,7 +57,7 @@ def build_argparse():
                        type=str)
     parse.add_argument("--vpath",
                        help="the path store the videos embedding",
-                       defult=None,
+                       default=None,
                        type=str)
     parse.add_argument("--ubatch_size",
                        help="the users batch size while generate the users embedding",
