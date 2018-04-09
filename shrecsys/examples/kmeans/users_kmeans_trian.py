@@ -96,26 +96,30 @@ def build_videos_embedding(args):
             #input, input_index = build_sparse_embedding_input()
 
 def train(args, videos_embedding, videos_index, view_seqs):
-    userTokenizer = UserTokenizer(view_seqs)
+    userTokenizer = UserTokenizer()
     if args.uembed_load:
-        users_embedding = fstool.load_obj(args.uembed_load, "users_embedding")
-        users_index = fstool.load_obj(args.uembed_load, "users_index")
+        users_embedding = fstool.load_obj(args.uembed_path, "users_embedding")
+        users_index = fstool.load_obj(args.uembed_path, "users_index")
+        index_embed = fstool.load_obj(args.uembed_path, "index_embed")
     else:
-        users_embedding, users_index = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
+        users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                               mode=args.uembed,
                                               videos_embedding=videos_embedding,
-                                              videos_index=videos_index,batch_size=args.ubatch_size)
+                                              videos_index=videos_index, batch_size=args.ubatch_size)
+        users_index = userTokenizer.get_uesr_index()
     if args.upath:
         fstool.save_obj(users_embedding, args.upath, "users_embedding")
+        fstool.save_obj(index_embed, args.upath, "index_embed")
         fstool.save_obj(users_index, args.upath, "users_index")
         logging.info("save the users embedding and user index, store path: {}".format(args.upath))
+
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
     cluster_centers = userKMeans.get_cluster_centers()
-    clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding)
-    clusters_videos_val = calculate_value(cluster_centers)
-    fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
-    fstool.save_obj(cluster_centers, args.mpath, "cluster_videos")
+    clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index)
+    #clusters_videos_val = calculate_value(clusters_videos)
+    #fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
+    #fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
 
 if __name__=="__main__":
     parse = build_argparse()

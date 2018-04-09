@@ -7,16 +7,25 @@
 from sklearn.cluster import KMeans
 
 import collections
-from shrecsys.preprocessing.userTokenizer import UserTokenizer
-from shrecsys.preprocessing.videoTokenizer import VideoTokenizer, generate_videos_embedding
-from shrecsys.util.fileSystemUtil import FileSystemUtil
+from collections import Counter
 
 def calculate_value(cluster_videos, mode="TF-IDF"):
     if isinstance(cluster_videos, dict):
         if mode == "TF-IDF":
             pass
         elif mode == "frequency":
-            pass
+            cluster_videos_val = dict()
+            for cluster in cluster_videos.keys():
+                videos = cluster_videos.get(cluster)
+                counter = Counter()
+                counter.update(videos)
+                video_val = dict()
+                for video in counter.items():
+                    video_val[video[0]] = video[1] / len(videos)
+                cluster_videos_val[cluster] = video_val
+            print(cluster_videos_val)
+
+
     else:
         raise TypeError("the cluster_video must be dict")
 
@@ -45,14 +54,16 @@ class UserKMeans(object):
     def predict(self, users_embedding):
         return self.kmeans.predict(users_embedding)
 
-    def clusters_videos_list(self, view_seqs, users_embedding):
+    def clusters_videos_list(self, view_seqs, users_embedding, index_embed, users_index):
         cluster_videos = dict()
         x = self.predict(users_embedding)
         for index, cluster in enumerate(x):
+            user_id = index_embed[index]
+            user_index = users_index[user_id]
             if cluster_videos.get(cluster) is None:
-                cluster_videos[cluster] = view_seqs[index]
+                cluster_videos[cluster] = view_seqs[user_index]
             else:
-                cluster_videos[cluster].extend(view_seqs[index])
+                cluster_videos[cluster].extend(view_seqs[user_index])
         return cluster_videos
 
     def get_top_k(self, clusters_videos_list, TOP_K=100, strategy="frequency"):
@@ -72,8 +83,5 @@ class UserKMeans(object):
 
 
 if __name__=="__main__":
-    videotokenizer = VideoTokenizer()
-    userTokenizer = UserTokenizer("../../../data/topic2vec", "videoTokenzier")
-    fstool = FileSystemUtil()
-    fstool.load_obj()
-    user = UserKMeans()
+    a = {2: [12345, 12345, 23456, 34567, 78910], 3: [413, 341, 542, 314, 644]}
+    calculate_value(a, mode="frequency")

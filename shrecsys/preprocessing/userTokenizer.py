@@ -50,6 +50,7 @@ class UserTokenizer(object):
 
     def pop_embed_index(self, user_index):
         for user in user_index:
+            #print(self.__index_embed)
             self.__index_embed.pop(user)
         index_embed = sorted(self.__index_embed.items(), key=operator.itemgetter(0))
         self.__index_embed.clear()
@@ -90,7 +91,14 @@ class UserTokenizer(object):
         tensorUtil = TensorUtil()
         users_embed = tensorUtil.generate_items_embedding(features_embedding=videos_embedding, \
                                                                items_feature=inputs, is_rating=True, batch_size=batch_size)
-        return users_embed, self.__embed_index
+        return users_embed, self.__index_embed
+
+    def filter_users(self, view_seqs, videos_index=None):
+        view_seqs_index, filter_view_seqs, del_seqs = view_seqs_to_index(view_seqs, videos_index)
+        self.__index_embed = self.__index_users
+        self.__embed_index = self.__users_index
+        self.pop_embed_index(del_seqs)
+        return filter_view_seqs, self.__embed_index
 
     def get_uesr_index(self):
         return self.__users_index
