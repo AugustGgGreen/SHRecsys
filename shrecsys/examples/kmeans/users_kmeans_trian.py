@@ -86,50 +86,58 @@ def load_view_seqs(args):
         return view_seqs
 
 def build_videos_embedding(args):
-    if args.vembed_path and args.vembed:
-        raise ValueError("the vemebed_path and vembed should be exist only one!")
     videos_embedding = None
     videos_index = None
-    if args.vembed == "sen2vec":
-        if args.vvec is None:
-            raise ValueError("the parameter of the videos embedding path is None")
-        else:
-            videos_embedding, videos_index = load_sen2vec_embedding(args.vvec)
 
-    elif args.vembed == "topic2vec":
-        if args.tvec is None:
-            raise ValueError("the parameter of topic embedding path is None")
-        else:
-            pass
-            #topics_embedding, topics_index = build_topics_embeding(args.tvec)
-            #videos_topics = load_videos_topics(args.vtopic)
-            #videos_index_topics = convert_topics_to_index(videos_topics, topics_index)
-            #input, input_index = build_sparse_embedding_input()
-    if args.vpath:
-        fstool.save_obj(videos_embedding, args.vpath, "videos_embedding")
-        fstool.save_obj(videos_index, args.vpath, "videos_index")
+    if args.vembed_path is None:
+        if args.vembed == "sen2vec":
+            if args.vvec is None:
+                raise ValueError("the parameter of the videos embedding path is None")
+            else:
+                videos_embedding, videos_index = load_sen2vec_embedding(args.vvec)
+
+        elif args.vembed == "topic2vec":
+            if args.tvec is None:
+                raise ValueError("the parameter of topic embedding path is None")
+            else:
+                pass
+                #topics_embedding, topics_index = build_topics_embeding(args.tvec)
+                #videos_topics = load_videos_topics(args.vtopic)
+                #videos_index_topics = convert_topics_to_index(videos_topics, topics_index)
+                #input, input_index = build_sparse_embedding_input()
+        logging.info("build the videos_embedding and videos_index success!")
+        if args.vpath:
+            fstool.save_obj(videos_embedding, args.vpath, "videos_embedding")
+            fstool.save_obj(videos_index, args.vpath, "videos_index")
+            logging.info("store videos_embedding and videos_index success, store path: {}".format(args.vpath))
+    else:
+        videos_embedding = fstool.load_obj(args.vembed_path, "videos_embedding")
+        videos_index = fstool.load_obj(args.vembed_path, "videos_index")
+        logging.info("load videos_embedding and videos_index success!")
     return videos_embedding, videos_index
 
-def train(args, videos_embedding, videos_index, view_seqs):
+def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
     userTokenizer = UserTokenizer()
-    if args.uembed_path and args.upath:
-        raise ValueError("the the users embedding load path and the user embedding store path should exist only one!")
     if args.uembed_path:
         users_embedding = fstool.load_obj(args.uembed_path, "users_embedding")
         users_index = fstool.load_obj(args.uembed_path, "users_index")
         index_embed = fstool.load_obj(args.uembed_path, "index_embed")
+        logging.info("load users_embedding、users_index and index_embed success!")
     else:
         users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                               mode=args.uembed,
                                               videos_embedding=videos_embedding,
                                               videos_index=videos_index, batch_size=args.ubatch_size)
         users_index = userTokenizer.get_uesr_index()
-    if args.upath:
-        fstool.save_obj(users_embedding, args.upath, "users_embedding")
-        fstool.save_obj(index_embed, args.upath, "index_embed")
-        fstool.save_obj(users_index, args.upath, "users_index")
-        logging.info("save the users embedding and user index, store path: {}".format(args.upath))
+        logging.info("build users_embedding、 users_index and index_embed success!")
+        if args.upath:
+            fstool.save_obj(users_embedding, args.upath, "users_embedding")
+            fstool.save_obj(index_embed, args.upath, "index_embed")
+            fstool.save_obj(users_index, args.upath, "users_index")
+            logging.info("save the users embedding and user index, store path: {}".format(args.upath))
+    return users_embedding, users_index, index_embed
 
+def train(users_embedding, users_index, index_embed):
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
     cluster_centers = userKMeans.get_cluster_centers()
