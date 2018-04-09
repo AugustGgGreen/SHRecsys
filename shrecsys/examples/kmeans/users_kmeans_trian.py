@@ -55,6 +55,10 @@ def build_argparse():
                        help="the path store the users embedding",
                        default=None,
                        type=str)
+    parse.add_argument("--vpath",
+                       help="the path store the videos embedding",
+                       defult=None,
+                       type=str)
     parse.add_argument("--ubatch_size",
                        help="the users batch size while generate the users embedding",
                        default=1000,
@@ -64,7 +68,11 @@ def build_argparse():
                        default=None,
                        type=str)
     parse.add_argument("--uembed_path",
-                       help="if load the users embedding",
+                       help="the path load the users embedding",
+                       default=None,
+                       type=str)
+    parse.add_argument("--vembed_path",
+                       help="the path load the videos embedding",
                        default=None,
                        type=str)
     return parse
@@ -78,12 +86,15 @@ def load_view_seqs(args):
         return view_seqs
 
 def build_videos_embedding(args):
+    if args.vembed_path and args.vembed:
+        raise ValueError("the vemebed_path and vembed should be exist only one!")
+    videos_embedding = None
+    videos_index = None
     if args.vembed == "sen2vec":
         if args.vvec is None:
             raise ValueError("the parameter of the videos embedding path is None")
         else:
             videos_embedding, videos_index = load_sen2vec_embedding(args.vvec)
-            return videos_embedding, videos_index
 
     elif args.vembed == "topic2vec":
         if args.tvec is None:
@@ -94,10 +105,16 @@ def build_videos_embedding(args):
             #videos_topics = load_videos_topics(args.vtopic)
             #videos_index_topics = convert_topics_to_index(videos_topics, topics_index)
             #input, input_index = build_sparse_embedding_input()
+    if args.vpath:
+        fstool.save_obj(videos_embedding, args.vpath, "videos_embedding")
+        fstool.save_obj(videos_index, args.vpath, "videos_index")
+    return videos_embedding, videos_index
 
 def train(args, videos_embedding, videos_index, view_seqs):
     userTokenizer = UserTokenizer()
-    if args.uembed_load:
+    if args.uembed_path and args.upath:
+        raise ValueError("the the users embedding load path and the user embedding store path should exist only one!")
+    if args.uembed_path:
         users_embedding = fstool.load_obj(args.uembed_path, "users_embedding")
         users_index = fstool.load_obj(args.uembed_path, "users_index")
         index_embed = fstool.load_obj(args.uembed_path, "index_embed")
