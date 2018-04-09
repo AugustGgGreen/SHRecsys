@@ -117,13 +117,13 @@ def build_videos_embedding(args):
     return videos_embedding, videos_index
 
 def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
-    userTokenizer = UserTokenizer()
     if args.uembed_path:
         users_embedding = fstool.load_obj(args.uembed_path, "users_embedding")
         users_index = fstool.load_obj(args.uembed_path, "users_index")
         index_embed = fstool.load_obj(args.uembed_path, "index_embed")
         logging.info("load users_embedding、users_index and index_embed success!")
     else:
+        userTokenizer = UserTokenizer(view_seqs)
         users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                               mode=args.uembed,
                                               videos_embedding=videos_embedding,

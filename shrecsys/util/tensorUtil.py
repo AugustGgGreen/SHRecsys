@@ -40,7 +40,7 @@ class TensorUtil(object):
                 gpu_options=tf.GPUOptions(allow_growth=True))) as sess:
             sess.run(tf.global_variables_initializer())
             items_batches, size, max_len = self.sparse_to_tensor(inputs=items_feature, is_rating=is_rating, batch_size=batch_size)
-            for user_batch in items_batches:
+            for index, user_batch in enumerate(items_batches):
                 items_features_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
                                                        dense_shape=(size, max_len))
                 rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
@@ -50,6 +50,8 @@ class TensorUtil(object):
                                                items_feature_tensor: items_features_input,
                                                feature_rating_tensor: rating})
                 items_embedding.extend(embedding[0])
+                if index % 1000 == 0:
+                    logging.info("building items embedding, index: {}/{}".format(index, len(items_batches)))
             sess.close()
         logging.info("generate embedding success! embedding size: {}".format(len(items_embedding)))
         return items_embedding
