@@ -148,10 +148,14 @@ def train(users_embedding, users_index, index_embed):
 
 def build_videos_index(view_seqs):
     seqs_video_index = dict()
+    index = 0
     for seq in view_seqs:
         for video in seq:
             if video not in seqs_video_index.keys():
                 seqs_video_index[video] = len(seqs_video_index)
+        index += 1
+        if index % 10000 == 0:
+            logging.info("build view sequence video index: {}".format(index))
     return seqs_video_index
 
 if __name__=="__main__":
