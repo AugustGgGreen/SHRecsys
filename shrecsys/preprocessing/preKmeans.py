@@ -81,6 +81,8 @@ def build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_use
         videos_embed = np.take(videos_embedding_array, indices, axis=0)[0]
         user_embedding = np.matmul(rating, videos_embed)
         users_embedding.append(user_embedding)
+        if i % 1 == 0:
+            logging.info("build users embedding, users index:{}".format(i))
     return users_embedding, users_index, index_embed
 
 if __name__=="__main__":
