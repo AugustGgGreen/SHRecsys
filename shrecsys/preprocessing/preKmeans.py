@@ -75,6 +75,8 @@ def build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_use
     Tfidf = tfidf_transformer.fit_transform(cropus_x)
     for i in range(len(view_seqs_)):
         rating = Tfidf.getrow(i).todense()
+        print(rating)
+        print(videos_embedding_new)
         users_embedding.append(np.matmul(rating, videos_embedding_new))
     return users_embedding, users_index, index_embed
 
