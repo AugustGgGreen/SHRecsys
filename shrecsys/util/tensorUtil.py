@@ -18,6 +18,33 @@ class TensorUtil(object):
             sess.close()
         return top_value, top_idx
 
+    def get_create_top_k(self, seq, rating, itemss_embedding, cluster_centers, top_k):
+        with tf.name_scope("top_k"):
+            seq_tensor = tf.placeholder(shape=[1, None], dtype=tf.int32)
+            rating_tensor = tf.placeholder(shape=[1, None], dtype=tf.float32)
+            videos_embedding_tensor = tf.placeholder(shape=[None, None], dtype=tf.float32)
+            cluster_centers_tensor = tf.placeholder(shape=[None, None], dtype=tf.float32)
+            predict_mean = self.weight_means(seq_tensor, rating_tensor, videos_embedding_tensor)
+            dist = tf.matmul(predict_mean, cluster_centers_tensor, transpose_b=True)
+            top_val_tensor, top_idx_tensor = tf.nn.top_k(dist, k=top_k)
+            with tf.Session(config=tf.ConfigProto(
+                    allow_soft_placement=True,
+                    log_device_placement=True,
+                    gpu_options=tf.GPUOptions(allow_growth=True))) as sess:
+                top_value, top_idx = sess.run([top_val_tensor, top_idx_tensor],
+                                              feed_dict={seq_tensor: seq,
+                                                         rating_tensor: rating,
+                                                         videos_embedding_tensor: itemss_embedding,
+                                                         cluster_centers_tensor: cluster_centers})
+                sess.close()
+            return top_value, top_idx
+
+    def weight_means(self, items_seq, rating_seq, items_embedding):
+        seq_embed = tf.nn.embedding_lookup(items_embedding, items_seq)
+        weight_mul = tf.multiply(seq_embed, tf.transpose(rating_seq))
+        weight_sum = tf.reduce_sum(weight_mul, axis=1)
+        return weight_sum / tf.reduce_sum(rating_seq)
+
     def generate_items_embedding(self, features_embedding, items_feature=None, is_rating=False, batch_size=None):
         '''
         生成用户的embedding

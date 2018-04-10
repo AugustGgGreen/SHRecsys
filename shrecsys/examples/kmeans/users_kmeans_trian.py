@@ -77,15 +77,12 @@ def build_argparse():
                        type=str)
     return parse
 
-def load_view_seqs(args, with_userid=True):
+def load_view_seqs(args):
     if args.vseqs is None:
         raise ValueError("the path of the users' view sequences is None")
     else:
         input = open(args.vseqs, "r")
-        if with_userid:
-            view_seqs = [line.strip().split()[1:] for line in input.readlines()]
-        else:
-            view_seqs = [line.strip().split() for line in input.readlines()]
+        view_seqs = [line.strip().split() for line in input.readlines()]
         return view_seqs
 
 def build_videos_embedding(args, seqs_video_index):
@@ -144,8 +141,7 @@ def train(users_embedding, users_index, index_embed):
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
     cluster_centers = userKMeans.get_cluster_centers()
-    print(cluster_centers)
-    clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index)
+    clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index, with_userid=True)
     clusters_videos_val = calculate_value(clusters_videos)
     fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
     fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")

@@ -53,7 +53,14 @@ class UserKMeans(object):
     def predict(self, users_embedding):
         return self.kmeans.predict(users_embedding)
 
-    def clusters_videos_list(self, view_seqs, users_embedding, index_embed, users_index):
+    def clusters_videos_list(self, view_seqs_, users_embedding, index_embed, users_index, with_userid=True):
+        view_seqs = []
+        if with_userid:
+            for view_seq in view_seqs_:
+                view_seqs.append(view_seq[1:])
+        else:
+            for view_seq in view_seqs_:
+                view_seqs.append(view_seq[0:])
         cluster_videos = dict()
         x = self.predict(users_embedding)
         for index, cluster in enumerate(x):

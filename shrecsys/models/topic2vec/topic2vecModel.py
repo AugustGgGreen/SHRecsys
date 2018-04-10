@@ -1,6 +1,32 @@
 # -*- coding:utf-8 -*-
 import tensorflow as tf
 
+
+def get_create_top_k(seq, rating, videos_embedding, top_k):
+    with tf.name_scope("top_k"):
+        seq_tensor = tf.placeholder(shape=[1, None], dtype=tf.int32)
+        rating_tensor = tf.placeholder(shape=[1, None], dtype=tf.float32)
+        videos_embedding_tensor = tf.placeholder(shape=[None, None], dtype=tf.float32)
+        predict_mean = weight_means(seq_tensor, rating_tensor)
+        dist = tf.matmul(predict_mean, videos_embedding_tensor, transpose_b=True)
+        top_val_tensor, top_idx_tensor = tf.nn.top_k(dist, k=top_k)
+        with tf.Session(config=tf.ConfigProto(
+                allow_soft_placement=True,
+                log_device_placement=True,
+                gpu_options=tf.GPUOptions(allow_growth=True))) as sess:
+            top_value, top_idx = sess.run([top_idx_tensor, top_idx_tensor], \
+                                          feed_dict={seq_tensor:seq,
+                                                     rating_tensor:rating,
+                                                     videos_embedding_tensor:videos_embedding})
+            sess.close()
+        return top_value, top_idx
+
+def weight_means(items_seq, rating_seq, videos_embedding):
+    seq_embed = tf.nn.embedding_lookup(videos_embedding, items_seq)
+    weight_mul = tf.multiply(seq_embed, tf.transpose(rating_seq))
+    weight_sum = tf.reduce_sum(weight_mul, axis=1)
+    return weight_sum / tf.reduce_sum(rating_seq)
+
 class Topic2vecModel(object):
     def __init__(self,topics_size, num_classes, embed_size, num_sampled, learning_rating, top_k):
         '''
