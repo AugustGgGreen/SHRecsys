@@ -9,7 +9,7 @@ from sklearn.cluster import KMeans
 import collections
 from collections import Counter
 
-def calculate_value(cluster_videos, mode="TF-IDF"):
+def calculate_value(cluster_videos, mode="frequency"):
     cluster_videos_val = dict()
     if isinstance(cluster_videos, dict):
         if mode == "TF-IDF":
@@ -24,9 +24,9 @@ def calculate_value(cluster_videos, mode="TF-IDF"):
                 for video in counter.items():
                     video_val[video[0]] = video[1] / len(videos)
                 cluster_videos_val[cluster] = video_val
-
     else:
         raise TypeError("the cluster_video must be dict")
+    return cluster_videos_val
 
 class UserKMeans(object):
     def __init__(self):

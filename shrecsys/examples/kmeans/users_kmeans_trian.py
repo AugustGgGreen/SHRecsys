@@ -143,10 +143,9 @@ def train(users_embedding, users_index, index_embed):
     cluster_centers = userKMeans.get_cluster_centers()
     print(cluster_centers)
     clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index)
-    print(clusters_videos)
-    #clusters_videos_val = calculate_value(clusters_videos)
-    #fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
-    #fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
+    clusters_videos_val = calculate_value(clusters_videos)
+    fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
+    fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
 
 def build_videos_index(view_seqs):
     seqs_video_index = dict()
