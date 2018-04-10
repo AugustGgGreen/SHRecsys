@@ -1,11 +1,22 @@
 # -*- coding:utf-8 -*-
-import numpy as np
-a =0.3
-b = np.zeros([5, 1])
-b[0] = 0.5
-b[1] = 0.3
-b[2] = 0.2
-b[3] = -0.1
-b[4] = 0.21
-print(np.multiply(a,b)[0:2])
+from functools import reduce
 
+import numpy as np
+def add(x,y):
+    return x+y
+a = np.zeros([6, 1])
+a[0] = 0
+a[1] = 1
+a[2] = 2
+a[3] = 0
+a[4] = 3
+a[5] = 0
+b = [[1, 3, 2, 1, 3],
+     [3, 4, 5, 6, 2],
+     [1, 3, 2, 4, 5],
+     [2, 1, 3, 0, 3],
+     [1, 2, 1, 6, 3],
+     [4, 5, 6, 3, 0]]
+print(np.matmul(np.transpose(a),b))
+print(reduce(add, a))
+print(np.divide((np.matmul(np.transpose(a),b)),reduce(add, a)))

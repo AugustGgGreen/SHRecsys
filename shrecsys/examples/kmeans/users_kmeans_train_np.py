@@ -4,7 +4,7 @@ import argparse
 import logging
 
 sys.path.append("/data/app/xuezhengyin/test/shrecsys")
-from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
+from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding, build_users_embedding_np
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
 from shrecsys.util.fileSystemUtil import FileSystemUtil
@@ -123,12 +123,7 @@ def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
         index_embed = fstool.load_obj(args.uembed_path, "index_embed")
         logging.info("load users_embedding、users_index and index_embed success!")
     else:
-        userTokenizer = UserTokenizer(view_seqs)
-        users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
-                                              mode=args.uembed,
-                                              videos_embedding=videos_embedding,
-                                              videos_index=videos_index, batch_size=args.ubatch_size)
-        users_index = userTokenizer.get_uesr_index()
+        users_embedding, users_index, index_embed = build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_userid=True)
         logging.info("build users_embedding、 users_index and index_embed success!")
         if args.upath:
             fstool.save_obj(users_embedding, args.upath, "users_embedding")
