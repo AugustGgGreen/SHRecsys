@@ -5,12 +5,13 @@ from __future__ import print_function
 
 import logging
 import os
+import sys
 import time
 import operator
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-
+sys.path.append("/data/app/xuezhengyin/app/shrecsys")
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.util.tensorUtil import TensorUtil
 
