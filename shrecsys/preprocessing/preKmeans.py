@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 import logging
+from functools import reduce
+
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from shrecsys.util.fileSystemUtil import FileSystemUtil
@@ -28,6 +30,8 @@ def load_sen2vec_embedding(SEN2VEC, view_videos_index):
     logging.info("generate embedding of sen2vec success! embedding size: {}".format(len(videos_index)))
     return videos_embedding, videos_index
 
+def add(x,y):
+    return x+y
 def build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_userid=True):
     users_embedding = []
     users_index = dict()
@@ -79,7 +83,7 @@ def build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_use
         indices = np.where(tfidf > 0)
         rating = np.take(tfidf, indices)[0]
         videos_embed = np.take(videos_embedding_array, indices, axis=0)[0]
-        user_embedding = np.matmul(rating, np.float64(videos_embed))
+        user_embedding = np.divide(np.matmul(rating, np.float64(videos_embed)), sum(rating))
         users_embedding.append(user_embedding)
         if i % 10000 == 0:
             logging.info("build users embedding, users index:{}".format(i))
