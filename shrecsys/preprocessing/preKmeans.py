@@ -74,19 +74,25 @@ def build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_use
     logging.info("rebuild videos embedding success!")
     Tfidf = tfidf_transformer.fit_transform(cropus_x)
     for i in range(len(view_seqs_)):
-        rating = np.float32(Tfidf.getrow(i).todense())
-        users_embedding.append(np.matmul(rating, videos_embedding_new))
+        tfidf = np.asarray(Tfidf.getrow(i).todense())[0]
+        videos_embedding_array = np.array(videos_embedding_new)
+        indices = np.where(tfidf > 0)
+        rating = np.take(tfidf, indices)[0]
+        videos_embed = np.take(videos_embedding_array, indices, axis=0)[0]
+        user_embedding = np.matmul(rating, videos_embed)
+        users_embedding.append(user_embedding)
     return users_embedding, users_index, index_embed
 
 if __name__=="__main__":
-    videos_embedding = [[4, 3, 2, 5, 7],
-                        [2, 3, 6, 1, 9],
-                        [1, 2, 2, 1, 3],
+    videos_embedding = [[-4, 3, 2, 5, 7],
+                        [-2, 3, 6, 1, 9],
+                        [-1, 2, 2, 1, 3],
                         [0, 3, 2, 7, 6],
-                        [8, 3, 4, 2, 2],
-                        [3, 1, 2, 3, 6]]
+                        [-8, 3, 4, 2, 2],
+                        [-3, 1, 2, 3, 6]]
     videos_index = {"3124":0, "4987":1, "6312":2, "3456":3, "7320":4, "2931":5}
-    view_seqs = [["4987", "6312", "2345", "2134"],
+    view_seqs = [["3456", "4987", "6312", "2345", "2134"],
                  ["3413", "3441", "1234", "1423"],
-                 ["2134", "7320", "3412", "6312"]]
+                 ["2134", "7320", "3412", "6312", "2931"]]
+    #build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_userid=False)
     print(build_users_embedding_np(videos_embedding, videos_index, view_seqs, with_userid=False))
