@@ -3,7 +3,7 @@ import sys
 import argparse
 import logging
 
-sys.path.append("/data/app/xuezhengyin/test/shrecsys")
+sys.path.append("/data/app/xuezhengyin/test/SHRecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding, build_users_embedding_np
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
