@@ -11,7 +11,7 @@ import operator
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-sys.path.append("/data/app/xuezhengyin/app/shrecsys")
+sys.path.append("/data/app/xuezhengyin/test/shrecsys")
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.util.tensorUtil import TensorUtil
 
@@ -42,12 +42,13 @@ cluster_videos_val = fstool.load_obj(ROOT, "cluster_videos_val")
 videos_embedding = fstool.load_obj(ROOT, "videos_embedding")
 videos_index = fstool.load_obj(ROOT, "videos_index")
 cluster_videos, cluster_values = build_videos_value(cluster_videos_val)
+test = np.array(videos_embedding)
 sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,
                                         log_device_placement=False,
                                         gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.05)))
 seq_tensor = tf.placeholder(shape=[1, None], dtype=tf.int32)
 rating_tensor = tf.placeholder(shape=[1, None], dtype=tf.float32)
-videos_embedding_tensor = tf.placeholder(shape=[None, None], dtype=tf.float32)
+videos_embedding_tensor = tf.Variable(test, dtype=tf.float32, name="videos_embedding")
 cluster_centers_tensor = tf.placeholder(shape=[None, None], dtype=tf.float32)
 seq_embed = tf.nn.embedding_lookup(videos_embedding_tensor, seq_tensor)
 weight_mul = tf.multiply(seq_embed, tf.transpose(rating_tensor))
@@ -56,6 +57,7 @@ predict_mean = weight_sum / tf.reduce_sum(rating_tensor)
 dist = tf.matmul(predict_mean, cluster_centers_tensor, transpose_b=True)
 top_val_tensor, top_idx_tensor = tf.nn.top_k(dist, k=TOP_K_CLUSTER)
 
+sess.run(tf.global_variables_initializer())
 app = Flask(__name__)
 tftool = TensorUtil()
 @app.route('/dnn/<view_line>', methods=['GET'])
@@ -89,8 +91,10 @@ def dnn(view_line):
         top_val, top_idx = sess.run([top_val_tensor, top_idx_tensor],
                                     feed_dict={seq_tensor: seq,
                                                rating_tensor: use_rating,
-                                               videos_embedding_tensor: videos_embedding,
+                                               #videos_embedding_tensor: videos_embedding,
                                                cluster_centers_tensor: cluster_center})
+        end_time = time.time()
+        logging.critical("cost time %fs" % (end_time - start_time))
         top_idx = top_idx[0]
         top_val = top_val[0]
         logging.info("cluster id: {}".format(top_idx))
@@ -112,4 +116,4 @@ def dnn(view_line):
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080)
-    #app.run(host="10.18.18.51', port=8080)
+    #app.run(host='10.18.18.51', port=8080)
