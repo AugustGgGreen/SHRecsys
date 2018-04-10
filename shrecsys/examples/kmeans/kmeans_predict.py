@@ -18,6 +18,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 ROOT = "../../../data/Kmeans"
+#ROOT = "/data/app/xuezhengyin/test/data/KMeans/data_100"
 TOP_K_CLUSTER = 3
 def build_videos_value(cluster_videos_val):
     cluster_videos = dict()
@@ -110,3 +111,4 @@ def dnn(view_line):
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080)
+    #app.run(host="10.18.18.51', port=8080)
