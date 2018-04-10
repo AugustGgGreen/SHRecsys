@@ -77,12 +77,15 @@ def build_argparse():
                        type=str)
     return parse
 
-def load_view_seqs(args):
+def load_view_seqs(args, with_userid=True):
     if args.vseqs is None:
         raise ValueError("the path of the users' view sequences is None")
     else:
         input = open(args.vseqs, "r")
-        view_seqs = [line.strip().split() for line in input.readlines()]
+        if with_userid:
+            view_seqs = [line.strip().split()[1:] for line in input.readlines()]
+        else:
+            view_seqs = [line.strip().split() for line in input.readlines()]
         return view_seqs
 
 def build_videos_embedding(args, seqs_video_index):
