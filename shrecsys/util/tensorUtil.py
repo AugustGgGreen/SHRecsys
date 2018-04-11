@@ -46,19 +46,20 @@ class TensorUtil(object):
         return weight_sum / tf.reduce_sum(rating_seq)
 
     def generate_items_embedding(self, features_embedding, items_feature=None, is_rating=False, batch_size=None):
-        '''
-        生成用户的embedding
-        :param videos_embedding: 视频embedding
-        :param batch_size: 在生成用户embedding过程中每次生成过程执行的batch大小
-        :param view_seqs_index: 索引化后的用户观影序列
-        :param is_rating: 视频是否加权
-        :return: 用户的embedding
-        '''
+        """
+        根据item的features 表示(例如:视频的topic分布，用户的观影视频分布)和feature的embedding表示生成item的embedding
+        值得注意的是:item_feature 中item的feature 是根据feature_embedding索引化之后的
+        :param features_embedding: feature的embedding表示，例如topic的embedding表示
+        :param items_feature: item的feature表示，例如视频的topic分布
+        :param is_rating: item的feature是否带权重
+        :param batch_size: 每次生成item embedding的大小
+        :return:
+        """
         features_embedding = np.array(features_embedding)
         items_feature_tensor = tf.sparse_placeholder(tf.int32, name="user_seqs")
         feature_embed = tf.placeholder(tf.float32, features_embedding.shape, name="videos_embedding")
         feature_rating_tensor = tf.sparse_placeholder(tf.float32, name="videos_rating")
-        user_embeding = tf.nn.embedding_lookup_sparse(params=feature_embed, sp_ids=items_feature_tensor, \
+        items_embed = tf.nn.embedding_lookup_sparse(params=feature_embed, sp_ids=items_feature_tensor, \
                                                       sp_weights=feature_rating_tensor, combiner="mean")
         items_embedding = []
         with tf.Session(config=tf.ConfigProto(
@@ -67,12 +68,12 @@ class TensorUtil(object):
                 gpu_options=tf.GPUOptions(allow_growth=True))) as sess:
             sess.run(tf.global_variables_initializer())
             items_batches, size, max_len = self.sparse_to_tensor(inputs=items_feature, is_rating=is_rating, batch_size=batch_size)
-            for index, user_batch in enumerate(items_batches):
-                items_features_input = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[1],
+            for index, items_batch in enumerate(items_batches):
+                items_features_input = tf.SparseTensorValue(indices=items_batch[0], values=items_batch[1],
                                                        dense_shape=(size, max_len))
-                rating = tf.SparseTensorValue(indices=user_batch[0], values=user_batch[2],
+                rating = tf.SparseTensorValue(indices=items_batch[0], values=items_batch[2],
                                               dense_shape=(size, max_len))
-                embedding = sess.run([user_embeding],
+                embedding = sess.run([items_embed],
                                     feed_dict={feature_embed: features_embedding,
                                                items_feature_tensor: items_features_input,
                                                feature_rating_tensor: rating})
@@ -84,6 +85,13 @@ class TensorUtil(object):
         return items_embedding
 
     def sparse_to_tensor(self, inputs=None, is_rating=False, batch_size=None):
+        '''
+
+        :param inputs: 输入转成tensorflow所需要的稀疏表示
+        :param is_rating: 稀疏表示是否存在weight值，如果存在将weight值也转成稀疏表示，如果不存在，生成一个所有weight值为1的稀疏表示
+        :param batch_size: 是否分batch生成
+        :return: 稀疏表示后的结果
+        '''
         if inputs is None:
             raise ValueError("the inputs is None Error!")
         if is_rating and batch_size is None:
@@ -104,20 +112,20 @@ class TensorUtil(object):
         weight = []
         max_len = 0
         t = 0
-        for i, user_seq in enumerate(inputs):
+        for i, feature_seq in enumerate(inputs):
             if t == batch_size:
                 batches.append([ids, values, weight])
                 ids = []
                 values = []
                 weight = []
                 t = 0
-            seq = user_seq[0]
-            rating = user_seq[1]
+            seq = feature_seq[0]
+            rating = feature_seq[1]
             if max_len < len(seq):
                 max_len = len(seq)
-            for j, video in enumerate(seq):
+            for j, feature in enumerate(seq):
                 ids.append([t, j])
-                values.append(video)
+                values.append(feature)
                 weight.append(rating[j])
             t += 1
         if len(ids) > 0:
@@ -130,14 +138,14 @@ class TensorUtil(object):
         values = []
         weight = []
         max_len = 0
-        for i, user_seq in enumerate(inputs):
-            seq = user_seq[0]
-            rating = user_seq[1]
+        for i, feature_seq in enumerate(inputs):
+            seq = feature_seq[0]
+            rating = feature_seq[1]
             if max_len < len(seq):
                 max_len = len(seq)
-            for j, video in enumerate(seq):
+            for j, feature in enumerate(seq):
                 ids.append([i, j])
-                values.append(video)
+                values.append(feature)
                 weight.append(rating[j])
             if i % 100 == 0:
                 logging.info("format the input to sparse tensor, index: {}".format(i))
@@ -151,20 +159,20 @@ class TensorUtil(object):
         weight = []
         max_len = 0
         t = 0
-        for i, user_seq in enumerate(inputs):
+        for i, feature_seq in enumerate(inputs):
             if t == batch_size:
                 batches.append([ids, values, weight])
                 ids = []
                 values = []
                 weight = []
                 t = 0
-            seq = user_seq
+            seq = feature_seq
             rating = [1 for x in seq]
             if max_len < len(seq):
                 max_len = len(seq)
-            for j, video in enumerate(seq):
+            for j, feature in enumerate(seq):
                 ids.append([t, j])
-                values.append(video)
+                values.append(feature)
                 weight.append(rating[j])
             t += 1
         if len(ids) > 0:
@@ -177,14 +185,14 @@ class TensorUtil(object):
         values = []
         weight = []
         max_len = 0
-        for i, user_seq in enumerate(inputs):
-            seq = user_seq
+        for i, feature_seq in enumerate(inputs):
+            seq = feature_seq
             rating = [1 for x in seq]
             if max_len < len(seq):
                 max_len = len(seq)
-            for j, video in enumerate(seq):
+            for j, feature in enumerate(seq):
                 ids.append([i, j])
-                values.append(video)
+                values.append(feature)
                 weight.append(rating[j])
         return [[ids, values, weight]], size, max_len
 

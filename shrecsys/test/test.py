@@ -19,7 +19,5 @@ b = [[1, 3, 2, 1, 3],
      [2, 1, 3, 0, 3],
      [1, 2, 1, 6, 3],
      [4, 5, 6, 3, 0]]
-print(np.where(a>0))
-print(np.take(b, np.where(a>0)[0], axis=0))
-print(reduce(add, a))
-print(np.divide((np.matmul(np.transpose(a),b)),reduce(sum, a)))
+c = np.asarray(b)
+print(c.shape)

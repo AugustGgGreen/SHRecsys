@@ -1,6 +1,5 @@
 # -*- coding:utf-8 -*-
 import logging
-from functools import reduce
 
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer

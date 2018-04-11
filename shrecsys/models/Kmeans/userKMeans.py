@@ -5,9 +5,38 @@
 (4)根据用户的embedding进行聚类
 """
 from sklearn.cluster import KMeans
-
+import tensorflow as tf
 import collections
 from collections import Counter
+
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+
+def calculate_value_tfidf(cluster_videos):
+    cluster_vidoes_val = dict()
+    vectorizer = CountVectorizer(min_df=0, token_pattern='\w+')
+    videos_x = [" ".join(cluster_videos.get(cluster)) for cluster in cluster_videos.keys()]
+    X = vectorizer.fit_transform(videos_x)
+    videos = vectorizer.get_feature_names()
+    index_videos = dict(zip([i for i in range(len(videos))], vectorizer.get_feature_names()))
+    tfidf_transformer = TfidfTransformer()
+    tfidf = tfidf_transformer.fit_transform(X)
+    dense_tfidf = tfidf.todense()
+    input = tf.placeholder(tf.float32, shape=dense_tfidf.shape, name='input')
+    top_value, top_idx = tf.nn.top_k(input, k=10)
+    with tf.Session(config=tf.ConfigProto(
+            allow_soft_placement=True,
+            log_device_placement=True,
+            gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.45))) as sess:
+        top_value, top_idx = sess.run([top_value, top_idx], feed_dict={input: dense_tfidf})
+        sess.close()
+        row, col = top_idx.shape
+    for i, cluster in enumerate(cluster_videos):
+        videos_val = dict()
+        for j in range(col):
+            if top_value[i][j]>0:
+                videos_val[index_videos[top_idx[i][j]]] = top_value[i][j]
+        cluster_vidoes_val[cluster] = videos_val
+    return cluster_vidoes_val
 
 def calculate_value(cluster_videos, mode="frequency"):
     cluster_videos_val = dict()
@@ -23,10 +52,14 @@ def calculate_value(cluster_videos, mode="frequency"):
                 video_val = dict()
                 for video in counter.items():
                     video_val[video[0]] = video[1] / len(videos)
+                counter.clear()
                 cluster_videos_val[cluster] = video_val
+        else:
+            raise ValueError("calculate the videos value error")
     else:
         raise TypeError("the cluster_video must be dict")
     return cluster_videos_val
+
 
 class UserKMeans(object):
     def __init__(self):
@@ -57,6 +90,7 @@ class UserKMeans(object):
         view_seqs = []
         if with_userid:
             for view_seq in view_seqs_:
+                #print(view_seq)
                 view_seqs.append(view_seq[1:])
         else:
             for view_seq in view_seqs_:
@@ -89,5 +123,9 @@ class UserKMeans(object):
 
 
 if __name__=="__main__":
-    a = {2: [12345, 12345, 23456, 34567, 78910], 3: [413, 341, 542, 314, 644]}
-    calculate_value(a, mode="frequency")
+    cluster_videos = {0: ['4', '3', '4', '4', '6'],
+                      1: ['3', '2', '1', '4', '8'],
+                      2: ['5', '3', '7', '6', '2'],
+                      4: ['3', '4', '0', '2', '6'],
+                      5: ['7', '9', '3', '8', '34']}
+    print(calculate_value_tfidf(cluster_videos))

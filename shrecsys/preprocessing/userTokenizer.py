@@ -79,6 +79,16 @@ class UserTokenizer(object):
         pass
 
     def generate_user_embedding(self, view_seqs, mode, videos_embedding=None, videos_index=None, batch_size=None):
+        '''
+        :param view_seqs: 用户观影序列
+        :param mode: 视频在观影序列中的权重表示：tf-idf, average
+        :param videos_embedding: 视频的embedding表示
+        :param videos_index: 视频索引
+        :param batch_size: 每次生成的batch大小
+        :return:
+        '''
+        #根据video index中的视频覆盖，过滤观影序列，并将观影序列转成索引表示
+        #返回过滤后的观影序列表示，返回过滤的用户索引
         view_seqs_index, _, del_seqs = view_seqs_to_index(view_seqs, videos_index)
         self.__index_embed = self.__index_users
         self.__embed_index = self.__users_index
