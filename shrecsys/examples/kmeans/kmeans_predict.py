@@ -11,7 +11,7 @@ import operator
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-sys.path.append("/data/app/xuezhengyin/test/shrecsys")
+sys.path.append("/data/app/xuezhengyin/test/SHRecsys")
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.util.tensorUtil import TensorUtil
 
@@ -99,7 +99,6 @@ def dnn(view_line):
         logging.info("cluster id: {}".format(top_idx))
         logging.info("cluster value: {}".format(top_val))
         videos_seq = set(videos_seq)
-        print(cluster_videos.keys())
         for i, idx in enumerate(top_idx):
             values = np.multiply(top_val[i], cluster_values[top_idx[i]][0:100])
             vid = cluster_videos[top_idx[i]][0:100]
