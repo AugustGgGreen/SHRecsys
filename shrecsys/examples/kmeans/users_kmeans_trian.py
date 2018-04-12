@@ -124,6 +124,7 @@ def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
         logging.info("load users_embedding、users_index and index_embed success!")
     else:
         userTokenizer = UserTokenizer(view_seqs)
+        print(view_seqs[0])
         users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                               mode=args.uembed,
                                               videos_embedding=videos_embedding,
@@ -137,7 +138,7 @@ def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
             logging.info("save the users embedding and user index, store path: {}".format(args.upath))
     return users_embedding, users_index, index_embed
 
-def train(users_embedding, users_index, index_embed):
+def train(view_seqs, users_embedding, users_index, index_embed):
     userKMeans = UserKMeans()
     userKMeans.fit(args.cnumber, args.n_jobs, users_embedding)
     cluster_centers = userKMeans.get_cluster_centers()
@@ -167,4 +168,4 @@ if __name__=="__main__":
     seqs_video_index = build_videos_index(view_seqs)
     videos_embedding, videos_index = build_videos_embedding(args, seqs_video_index)
     users_embedding, users_index, index_embed = build_users_embedding(args, videos_embedding, videos_index, view_seqs)
-    train(users_embedding, users_index, index_embed)
+    train(view_seqs, users_embedding, users_index, index_embed)

@@ -90,6 +90,8 @@ class UserTokenizer(object):
         #根据video index中的视频覆盖，过滤观影序列，并将观影序列转成索引表示
         #返回过滤后的观影序列表示，返回过滤的用户索引
         view_seqs_index, _, del_seqs = view_seqs_to_index(view_seqs, videos_index)
+        print("this is a good idea")
+        print(view_seqs_index[0])
         self.__index_embed = self.__index_users
         self.__embed_index = self.__users_index
         self.pop_embed_index(del_seqs)

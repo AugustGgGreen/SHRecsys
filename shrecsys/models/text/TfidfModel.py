@@ -10,6 +10,8 @@ class TfidfModel(object):
 
     def calculate_Tfidf(self):
         vectorizer = CountVectorizer(min_df=0, token_pattern='\w+')
+        print("this is TFIDF")
+        print(self.__cropus[0])
         cropus_x = vectorizer.fit_transform(self.__cropus)
         words = vectorizer.get_feature_names()
         index = [i for i in range(len(words))]
