@@ -16,8 +16,10 @@ def load_sen2vec_embedding(SEN2VEC, view_videos_index):
     index_ = 0
     while line:
         points = line.split(' ')
-        id = points[0]
-        if id in view_videos_index.keys():
+        rawid = points[0]
+        if rawid in view_videos_index.keys():
+            vid,site = rawid.split('#')
+            id = vid + site
             videos_index[id] = index
             embedding = points[1:]
             videos_embedding.append(embedding)

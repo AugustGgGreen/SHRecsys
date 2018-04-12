@@ -124,7 +124,6 @@ def build_users_embedding(args, videos_embedding, videos_index, view_seqs):
         logging.info("load users_embedding、users_index and index_embed success!")
     else:
         userTokenizer = UserTokenizer(view_seqs)
-        print(view_seqs[0])
         users_embedding, index_embed = userTokenizer.generate_user_embedding(view_seqs=view_seqs,
                                               mode=args.uembed,
                                               videos_embedding=videos_embedding,
