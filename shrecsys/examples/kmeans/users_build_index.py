@@ -20,5 +20,6 @@ users_index = fstool.load_obj(ROOT, "users_index")
 d = np.array(users_embedding).shape[1]
 index = faiss.IndexFlatL2(d)
 index.train(np.array(users_embedding))
+D, I = index.search(np.array(users_embedding[:4]), 100)
 fstool.save_obj(index, ROOT, "faiss_index")
 
