@@ -5,6 +5,7 @@ import argparse
 import logging
 pwd = os.getcwd()
 pwd = os.path.abspath(os.path.dirname(pwd)+os.sep + "..")
+pwd = os.path.abspath(os.path.dirname(pwd)+os.sep + ".")
 sys.path.append(pwd)
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
