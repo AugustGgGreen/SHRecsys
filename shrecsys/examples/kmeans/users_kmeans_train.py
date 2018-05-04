@@ -7,6 +7,7 @@ pwd = os.getcwd()
 pwd = os.path.abspath(os.path.dirname(pwd)+os.sep + "..")
 pwd = os.path.abspath(os.path.dirname(pwd)+os.sep + ".")
 sys.path.append(pwd)
+print(pwd)
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
