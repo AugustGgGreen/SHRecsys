@@ -198,8 +198,11 @@ class TensorUtil(object):
 
 if __name__=="__main__":
     tensorFormat = TensorUtil()
-    array = [[1,2,3],
+    array = [
+        [1, 2, 3],
         [0.3, 0.4, 0.2],
-        [1,2,3,5],
-        [0.3, 0.4,0.2,0.7],[1,2,3,7,6,4],[0.3,0.4,0.2,0.1,0.3,0.2]]
+        [1, 2, 3, 5],
+        [0.3, 0.4, 0.2, 0.7],
+        [1, 2, 3, 7, 6, 4],
+        [0.3, 0.4, 0.2, 0.1, 0.3, 0.2]]
     print(tensorFormat.sparse_to_tensor(inputs=array))
