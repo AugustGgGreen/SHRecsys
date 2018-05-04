@@ -5,7 +5,6 @@ import argparse
 import logging
 pwd = os.getcwd()
 sys.path.append(pwd+"/SHRecsys")
-print(pwd)
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value

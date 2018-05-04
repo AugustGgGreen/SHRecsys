@@ -7,17 +7,18 @@ import logging
 import os
 import sys
 import time
+import operator
 import numpy as np
 import tensorflow as tf
 from flask import Flask, jsonify
-sys.path.append("/data/app/xuezhengyin/app/SHRecsys")
+pwd = os.getcwd()
+sys.path.append(pwd+"/SHRecsys")
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.util.tensorUtil import TensorUtil
-import operator
 logging.getLogger().setLevel(logging.INFO)
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
-ROOT = "/data/app/xuezhengyin/app/data/KMeans/data_online"
+ROOT = pwd + "/data/data_online"
 TOP_K_CLUSTER = 100
 def build_videos_value(cluster_videos_val):
     cluster_videos = dict()
