@@ -1,9 +1,11 @@
 # -*- coding:utf-8 -*-
+import os
 import sys
 import argparse
 import logging
-
-sys.path.append("/data/app/xuezhengyin/test/SHRecsys")
+pwd = os.getcwd()
+pwd = os.path.abspath(os.path.dirname(pwd)+os.sep + "..")
+sys.path.append(pwd)
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
