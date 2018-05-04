@@ -52,7 +52,7 @@ def build_argparse():
     parse.add_argument("--n_jobs",
                        help="the work process of the KMeans",
                        default=15,
-                       type=str)
+                       type=int)
     parse.add_argument("--upath",
                        help="the path store the users embedding",
                        default=None,
