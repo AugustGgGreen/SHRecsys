@@ -51,7 +51,7 @@ def calculate_value(cluster_videos, mode="frequency"):
                 counter.update(videos)
                 video_val = dict()
                 for video in counter.items():
-                    video_val[video[0]] = video[1] / len(videos)
+                    video_val[video[0]] = video[1] #/ len(videos)
                 counter.clear()
                 cluster_videos_val[cluster] = video_val
         else:

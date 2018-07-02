@@ -4,12 +4,11 @@ import sys
 import argparse
 import logging
 
-from shrecsys.examples.kmeans.test.analysis import output_video_tilte
-
 pwd = os.getcwd()
 sys.path.append(pwd+"/SHRecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
 from shrecsys.preprocessing.userTokenizer import UserTokenizer
+from shrecsys.examples.kmeans.test.analysis import output_video_tilte, output_video_value
 from shrecsys.models.Kmeans.userKMeans import UserKMeans, calculate_value
 from shrecsys.util.fileSystemUtil import FileSystemUtil
 
@@ -147,9 +146,9 @@ def train(view_seqs, users_embedding, users_index, index_embed):
     cluster_centers = userKMeans.get_cluster_centers()
     clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index, with_userid=True)
     clusters_videos_val = calculate_value(clusters_videos)
-    output_video_tilte(clusters_videos_val)
     fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
     fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
+    output_video_value(clusters_videos_val)
 
 def build_videos_index(view_seqs):
     seqs_video_index = dict()
