@@ -3,6 +3,9 @@ import os
 import sys
 import argparse
 import logging
+
+from shrecsys.examples.kmeans.test.analysis import output_video_tilte
+
 pwd = os.getcwd()
 sys.path.append(pwd+"/SHRecsys")
 from shrecsys.preprocessing.preKmeans import load_sen2vec_embedding
@@ -33,7 +36,7 @@ def build_argparse():
     parse.add_argument("--vvec",
                        help="the path of the videos embedding vector, \
                        while the videos embedding is sentence2vec",
-                       default="None",
+                       default="../../../data/Kmeans/sentence_embed.vec",
                        type=str)
     parse.add_argument("--tvec",
                        help="the path of the topics embedding vector, \
@@ -46,7 +49,7 @@ def build_argparse():
                        type=str)
     parse.add_argument("--vseqs",
                        help="the path of the users' view sequences",
-                       default=None,
+                       default="../../../data/Kmeans/view_seqs",
                        type=str)
     parse.add_argument("--n_jobs",
                        help="the work process of the KMeans",
@@ -144,6 +147,7 @@ def train(view_seqs, users_embedding, users_index, index_embed):
     cluster_centers = userKMeans.get_cluster_centers()
     clusters_videos = userKMeans.clusters_videos_list(view_seqs, users_embedding, index_embed, users_index, with_userid=True)
     clusters_videos_val = calculate_value(clusters_videos)
+    output_video_tilte(clusters_videos_val)
     fstool.save_obj(cluster_centers, args.mpath, "cluster_centers")
     fstool.save_obj(clusters_videos_val, args.mpath, "cluster_videos_val")
 
