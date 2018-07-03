@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 from shrecsys.Dao.videoDao import VideoDao
 
 def output_video_tilte(clusters_videos):
